@@ -2,6 +2,10 @@ PARSER_PACKAGE=pt.up.fe.comp;
 PARSER_CLASS=JmmGrammarParser;
 SMART_NODE_CREATION=false;
 
+// [] -> ?
+// {} -> *
+
+
 SKIP : " " | "\t" | "\r" | "\n";
 
 TOKEN :
@@ -9,31 +13,87 @@ TOKEN :
 	< MINUS : "-" > |
 	< TIMES : "*" > |
 	< DIVIDE : "/" > |
+	< ASSIGN : "=" > |
+	< LESS_THAN : "<" >
+	< LOGIC_AND : "&&" >
 	< OPEN_PAREN : "(" > |
 	< CLOSE_PAREN : ")" > |
-	< INTEGER : (["0" - "9"])+ >
+	< OPEN_SQUARE_BRACES : "[" > |
+	< CLOSE_SQUARE_BRACES : "]" > |
+	< OPEN_CURLY_BRACES : "{" > |
+	< CLOSE_CURLY_BRACES : "}" > |
+	< SEMI_COLON : ";" > |
+	< IDENTIFIER: ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])*> | //TODO: complete
+	< INTEGER_LITERAL : ["0"-"9"]("0"-"9")*> |
+	< IF : "if" > |
+	< ELSE : "else" > |
+	< WHILE : "while" > |
+	< TRUE : "true" > |
+	< FALSE: "false" > |
+	< DOT : "." > |
+	< CLASS : "class" > |
+	< PUBLIC : "public" > |
+	< STATIC : "static" > |
+	< IMPORT : "import" > |
+	< STRING : "String" > |
+	< MAIN : "main" > |
+	< VOID : "void" > |
+	< EXTENDS : "extends" > |
+	< LENGTH : "length"> |
+	< COMMA : ","> |
+	< NEW : "new" > |
+	< THIS : "this" > |
+	< INT : "int" > |
+	< RETURN : "return" > |
+	< BOOLEAN : "boolean" > |
+	< BANG : "!" >
 ;
 
-Start : AdditiveExpression <EOF> ;
+Program : ImportDeclaration ClassDeclaration <EOF> ;
 
-AdditiveExpression :
-	MultiplicativeExpression
-	(
-		(< PLUS > | < MINUS >)
-		MultiplicativeExpression
-	)?
+ImportDeclaration : (< IMPORT > < IDENTIFIER > (< DOT > < IDENTIFIER >)* < SEMI_COLON >)* ;
+
+ClassDeclaration : < CLASS > < IDENTIFIER >  ( < EXTENDS > < IDENTIFIER >)? < OPEN_CURLY_BRACES >
+                    (VarDeclaration)* (MethodDeclaration)*
+                    < CLOSE_CURLY_BRACES > ;
+
+VarDeclaration : Type Identifier < SEMI_COLON > ;
+
+MethodDeclaration : < PUBLIC > Type < IDENTIFIER > < OPEN_PAREN >
+                    (Type < IDENTIFIER > ( < COMMA > Type < IDENTIFIER >)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES >
+                    (VarDeclaration)* (Statement)* < RETURN > Expression <SEMI_COLON > < CLOSE_CURLY_BRACES >
+                    |
+                    < PUBLIC > < STATIC > < VOID > < MAIN > <OPEN_PAREN > < STRING > < OPEN_SQUARE_BRACES > < CLOSE_SQUARE_BRACES >
+                    < IDENTIFIER > < CLOSE_PAREN > < OPEN_CURLY_BRACES > (VarDeclaration)* (Statement)* < CLOSE_CURLY_BRACES >
+                    ;
+
+
+Type : <INT> | <BOOLEAN> | <INT> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> | <IDENTIFIER>;
+
+Statement:
+    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES> |
+    <IF> <OPEN_PAREN> Expression <CLOSE_PAREN> <CLOSE_PAREN> Statement <ELSE> Statement |
+    <WHILE> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement |
+    Expression <SEMI_COLON> |
+    <INDENTIFIER> <ASSIGN> Expression <SEMI_COLON> |
+    <INDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON>
 ;
 
-MultiplicativeExpression :
-	Factor
-	(
-		(< TIMES > | < DIVIDE >)
-		Factor
-	)?
+//(< TIMES > UnaryOp { jjtThis.put("op", "MUL"); }) #BinOp(2) |
+//(< INTEGER > { jjtThis.put("image", lastConsumedToken.getImage()); }) #IntegerLiteral
+
+
+Expression:
+    Expression (<LOGIC_AND> | <LESS_THAN> | <PLUS> | <MINUS> | <TIMES> | <DIVIDE> ) Expression |
+    Expression <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
+    Expression <DOT> <LENGTH> |
+    Expression <DOT> <INDENTIFIER> <OPEN_PAREN> (Expression (<COMMA> Expression)*)? <CLOSE_PAREN> |
+    <INTEGER_LITERAL>| // how can this be implemented in node structure (is -N a unary op? )
+    <TRUE> | <FALSE> |
+    <THIS> |
+    <NEW> | <INT> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
+    <NEW> <INDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN> |
+    <BANG> Expression |
+    <OPEN_PAREN> Expression <CLOSE_PAREN>
 ;
 
-Factor :
-	< INTEGER > |
-	< MINUS> Factor |
-	< OPEN_PAREN > AdditiveExpression < CLOSE_PAREN >
-;
