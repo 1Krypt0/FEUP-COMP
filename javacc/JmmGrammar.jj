@@ -47,6 +47,8 @@ TOKEN :
 	< RETURN : "return" > |
 	< BOOLEAN : "boolean" > |
 	< BANG : "!" >
+	// | < LINE_COMMENT : ["////"]()> //TODO: Regex for ignoring comments
+	// | < BLOCK_COMMENT : >
 ;
 
 Program : ImportDeclaration ClassDeclaration <EOF> ;
@@ -79,21 +81,64 @@ Statement:
     <INDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON>
 ;
 
-//(< TIMES > UnaryOp { jjtThis.put("op", "MUL"); }) #BinOp(2) |
-//(< INTEGER > { jjtThis.put("image", lastConsumedToken.getImage()); }) #IntegerLiteral
-
 
 Expression:
     Expression (<LOGIC_AND> | <LESS_THAN> | <PLUS> | <MINUS> | <TIMES> | <DIVIDE> ) Expression |
-    Expression <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
-    Expression <DOT> <LENGTH> |
-    Expression <DOT> <INDENTIFIER> <OPEN_PAREN> (Expression (<COMMA> Expression)*)? <CLOSE_PAREN> |
-    <INTEGER_LITERAL>| // how can this be implemented in node structure (is -N a unary op? )
+    ArrayExpression <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
+    ArrayExpression <DOT> <LENGTH> |
+    MethodCall |
+    <INTEGER_LITERAL> | // how can this be implemented in node structure (is -N a unary op? )
     <TRUE> | <FALSE> |
     <THIS> |
     <NEW> | <INT> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
     <NEW> <INDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN> |
     <BANG> Expression |
     <OPEN_PAREN> Expression <CLOSE_PAREN>
+;
+
+ArrayExpression:
+    <INDENTIFIER>
+    | <NEW> <INT>
+    | NumericExpression
+;
+
+NumericExpression:
+    <IDENTIFIER> <DOT> <IDENTIFIER>
+    | <OPEN_PAREN> NumericExpression <CLOSE_PAREN>
+;
+
+MethodCall:
+    MethodCall <DOT> <IDENTIFIER> <OPEN_PAREN> ( Expression (<COMMA> Expression)* )? <CLOSE_PAREN>
+    | <THIS>
+    | <IDENTIFIER>
+;
+
+And:
+    LessThan (<LOGIC_AND> LessThan)*
+;
+
+LessThan:
+    AdditiveExpression (<LESS_THAN> AdditiveExpression)*
+;
+
+AdditiveExpression:
+    MultiplicativeExpression
+	(
+		< PLUS > MultiplicativeExpression |
+		< MINUS > MultiplicativeExpression
+	)*
+;
+
+MultiplicativeExpression:
+    Not
+    (
+        < TIMES > Not  |
+        < DIVIDE > Not
+    )*
+;
+
+Not:
+    (<BANG>)? <IDENTIFIER> | (<BANG>)? <INTEGER_LITERAL> | Expression
+    //DOUBT: can not expand to an expression again?
 ;
 
