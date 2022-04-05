@@ -91,79 +91,37 @@ Statement:
 
 IfStatement: <IF> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement <ELSE> Statement ;
 
-WhileStatement: <WHILE> <OPEN_PAREN> ExpressionAnd <CLOSE_PAREN> <STATEMENT>;
+WhileStatement: <WHILE> <OPEN_PAREN> ExpressionAnd <CLOSE_PAREN> Statement;
 
-ExpressionAnd :
+ExpressionAnd : ExpressionLessThan (<AND> ExpressionLessThan)* ;
+
+ExpressionLessThan: (ExpressionAdd | ExpressionSub) ( <LESS> (ExpressionAdd | ExpressionSub) )* ;
+
+ExpressionAdd: (ExpressionMul | ExpressionDiv) (<PLUS> (ExpressionMul | ExpressionDiv))* ;
+
+ExpressionSub: (ExpressionMul | ExpressionDiv) (<MINUS> (ExpressionMul | ExpressionDiv))* ;
+
+ExpressionMul: ExpressionArray (<TIMES> ExpressionArray)* ;
+
+ExpressionDiv:  ExpressionArray (<DIVIDE> ExpressionArray)* ;
+
+ExpressionArray: ExpressionNot (Array)? ;
+
+Array: <OPEN_SQUARE_BRACES> ExpressionAnd <CLOSE_SQUARE_BRACES> ;
+
+ExpressionNot: ExpressionDot | (<BANG> ExpressionNot)
+
+ExpressionDot: Expression (<DOT> (<LENGTH> | MethodCall))* ;
+
+MethodCall: <IDENTIFIER> <OPEN_PAREN> Params <CLOSE_PAREN> ;
+
+Params: ExpressionAnd (<COLON> ExpressionAnd)* ;
 
 Expression:
-    And |
-    ArrayAccessExpression <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
-	ArrayCreateExpression | 
-    ArrayAccessExpression <DOT> <LENGTH> |
-    MethodCall |
-    <INTEGER_LITERAL> | // how can this be implemented in node structure (is -N a unary op? )
-    <TRUE> | <FALSE> |
-    <THIS> |
-    <NEW> <INDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN> |
-    <BANG> Expression |
-    <OPEN_PAREN> Expression <CLOSE_PAREN>
-;
-
-ArrayExpression:
-	ArrayAccessExpression | ArrayCreateExpression
-;
-
-ArrayAccessExpression: 
-	 <INDENTIFIER>
-    | NumericExpression
-; 
-
-ArrayCreateExpression: 
-	<NEW> <INT> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>
-	//TODO: validate new int[]{1,2,3,4,5}
-; 
-
-
-NumericExpression :
-    < INDENTIFIER > <DOT> < IDENTIFIER >
-    | <OPEN_PAREN> NumericExpression <CLOSE_PAREN>
-;
-
-MethodCall:
-    MethodCall <DOT> < IDENTIFIER > <OPEN_PAREN> ( Expression (<COMMA> Expression)* )? <CLOSE_PAREN>
+    <INTEGER_LITERAL>
+    | <TRUE>
+    | <FALSE>
     | <THIS>
-    | < IDENTIFIER >
-;
-
-And:
-    LessThan (<LOGIC_AND> LessThan)*
-;
-
-LessThan:
-    AdditiveExpression (<LESS_THAN> AdditiveExpression)*
-;
-
-AdditiveExpression:
-    MultiplicativeExpression
-	(
-		< PLUS > MultiplicativeExpression |
-		< MINUS > MultiplicativeExpression
-	)*
-;
-
-MultiplicativeExpression:
-    Not
-    (
-        < TIMES > Not  |
-        < DIVIDE > Not
-    )*
-;
-
-Not:
-    (<BANG>)? Factor | (<BANG>)? Expression
-;
-
-
-Factor: 
-	< IDENTIFIER > | <INTEGER_LITERAL>
-;
+    | <IDENTIFIER>
+    | <OPEN_PAREN> ExpressionAnd <CLOSE_PAREN> ;
+    | <NEW> (<INT> Array | <IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN) ;
