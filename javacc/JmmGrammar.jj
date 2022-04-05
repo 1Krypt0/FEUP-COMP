@@ -5,6 +5,8 @@ SMART_NODE_CREATION=false;
 SKIP : " " | "\t" | "\r" | "\n";
 
 TOKEN :
+
+    // Operations
 	< PLUS : "+" > |
 	< MINUS : "-" > |
 	< TIMES : "*" > |
@@ -13,40 +15,49 @@ TOKEN :
 	< LESS_THAN : "<" > |
 	< LOGIC_AND : "&&" > |
 	< OPEN_PAREN : "(" > |
+    < BANG : "!" > |
+
+	// Literals and Factors
+	< IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > |
+    < INTEGER_LITERAL : (["0" - "9"])+ > |
+    < TRUE : "true" > |
+    < FALSE: "false" > |
+
+	// Delimiters
 	< CLOSE_PAREN : ")" > |
 	< OPEN_SQUARE_BRACES : "[" > |
 	< CLOSE_SQUARE_BRACES : "]" > |
 	< OPEN_CURLY_BRACES : "{" > |
 	< CLOSE_CURLY_BRACES : "}" > |
-	< SEMI_COLON : ";" > |
+	< SEMICOLON : ";" > |
+    < INLINE_COMMENT: "//" > |
+    < COMMA : ","> |
+    < DOT : "." > |
+    // < LINE_COMMENT: "/*" > (!"*/" .)* "*/" >;
 
-	< INLINE_COMMENT: "//" > | 
-	< BANG : "!" > | 
-
-	< IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > | //TODO: complete
-	< INTEGER_LITERAL : (["0" - "9"])+ > |
-	
+	// Logic and Control
 	< IF : "if" > |
 	< ELSE : "else" > |
 	< WHILE : "while" > |
-	< TRUE : "true" > |
-	< FALSE: "false" > |
-    < DOT : "." > |	
+
+
+    // Types
+    < BOOLEAN : "boolean" >  |
+    < STRING : "String" > |
+    < INT : "int" > |
+
+    // Keywords
 	< CLASS : "class" > |
 	< PUBLIC : "public" > |
 	< STATIC : "static" > |
 	< IMPORT : "import" > |
-	< STRING : "String" > |
 	< MAIN : "main" > |
 	< VOID : "void" > |
 	< EXTENDS : "extends" > |
 	< LENGTH : "length"> |
-	< COMMA : ","> |
 	< NEW : "new" > |
 	< THIS : "this" > |
-	< INT : "int" > |
-	< RETURN : "return" > |
-	< BOOLEAN : "boolean" >    
+	< RETURN : "return" >
 ;
 
 //SPECIAL_TOKEN: 
@@ -56,13 +67,14 @@ TOKEN :
 
 Program : ImportDeclaration ClassDeclaration <EOF> ;
 
-ImportDeclaration : (< IMPORT > < IDENTIFIER > (< DOT > < IDENTIFIER >)* < SEMI_COLON >)* ;
+ImportDeclaration : (< IMPORT > < IDENTIFIER > (< DOT > < IDENTIFIER >)* < SEMICOLON >)* ;
 
-ClassDeclaration : < CLASS > < IDENTIFIER >  ( < EXTENDS > < IDENTIFIER >)? < OPEN_CURLY_BRACES >
-                    (VarDeclaration)* (MethodDeclaration)*
-                    < CLOSE_CURLY_BRACES > ;
+ClassDeclaration :
+    < CLASS > < IDENTIFIER >  ( < EXTENDS > < IDENTIFIER >)? < OPEN_CURLY_BRACES >
+                (VarDeclaration)* (MethodDeclaration)*
+                  < CLOSE_CURLY_BRACES > ;
 
-VarDeclaration : Type <INDENTIFIER> < SEMI_COLON > ;
+VarDeclaration : Type <IDENTIFIER> < SEMICOLON > ;
 
 
 MethodDeclaration : < PUBLIC > (MainDeclaration | NormalMethodDeclaration) ;
@@ -73,7 +85,7 @@ MainDeclaration : < STATIC > < VOID > < MAIN > <OPEN_PAREN > < STRING > < OPEN_S
 
 NormalMethodDeclaration : Type < IDENTIFIER > < OPEN_PAREN >
                     (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES >
-                    MethodBody < RETURN > Expression <SEMI_COLON > < CLOSE_CURLY_BRACES > ;
+                    MethodBody < RETURN > Expression <SEMICOLON > < CLOSE_CURLY_BRACES > ;
 
 MethodBody: (VarDeclaration)* (Statement)* ;
 
@@ -85,17 +97,17 @@ Type : <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>)? | <BOOLEAN> | <IDENTI
 Statement:
     <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>
     | <WHILE> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement
-    | Expression <SEMI_COLON>
-    | <INDENTIFIER> <ASSIGN> Expression <SEMI_COLON>
-    | <INDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON> ;
+    | Expression <SEMICOLON>
+    | <IDENTIFIER> <ASSIGN> Expression <SEMICOLON>
+    | <IDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON> ;
 
 IfStatement: <IF> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement <ELSE> Statement ;
 
 WhileStatement: <WHILE> <OPEN_PAREN> ExpressionAnd <CLOSE_PAREN> Statement;
 
-ExpressionAnd : ExpressionLessThan (<AND> ExpressionLessThan)* ;
+ExpressionAnd : ExpressionLessThan (<LOGIC_AND> ExpressionLessThan)* ;
 
-ExpressionLessThan: (ExpressionAdd | ExpressionSub) ( <LESS> (ExpressionAdd | ExpressionSub) )* ;
+ExpressionLessThan: (ExpressionAdd | ExpressionSub) ( <LESS_THAN> (ExpressionAdd | ExpressionSub) )* ;
 
 ExpressionAdd: (ExpressionMul | ExpressionDiv) (<PLUS> (ExpressionMul | ExpressionDiv))* ;
 
@@ -109,13 +121,13 @@ ExpressionArray: ExpressionNot (Array)? ;
 
 Array: <OPEN_SQUARE_BRACES> ExpressionAnd <CLOSE_SQUARE_BRACES> ;
 
-ExpressionNot: ExpressionDot | (<BANG> ExpressionNot)
+ExpressionNot: ExpressionDot | (<BANG> ExpressionNot);
 
 ExpressionDot: Expression (<DOT> (<LENGTH> | MethodCall))* ;
 
 MethodCall: <IDENTIFIER> <OPEN_PAREN> Params <CLOSE_PAREN> ;
 
-Params: ExpressionAnd (<COLON> ExpressionAnd)* ;
+Params: ExpressionAnd (<COMMA> ExpressionAnd)* ;
 
 Expression:
     <INTEGER_LITERAL>
@@ -123,5 +135,5 @@ Expression:
     | <FALSE>
     | <THIS>
     | <IDENTIFIER>
-    | <OPEN_PAREN> ExpressionAnd <CLOSE_PAREN> ;
-    | <NEW> (<INT> Array | <IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN) ;
+    | <OPEN_PAREN> ExpressionAnd <CLOSE_PAREN>
+    | <NEW> (<INT> Array) | (<IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>) ;
