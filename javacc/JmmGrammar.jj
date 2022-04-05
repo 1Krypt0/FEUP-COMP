@@ -2,8 +2,8 @@ PARSER_PACKAGE=pt.up.fe.comp;
 PARSER_CLASS=JmmGrammarParser;
 SMART_NODE_CREATION=false;
 
-// [] -> ?
-// {} -> *
+// [] -> ? (optional - 0 or 1)
+// {} -> * (zero or more)
 
 
 SKIP : " " | "\t" | "\r" | "\n";
@@ -14,8 +14,8 @@ TOKEN :
 	< TIMES : "*" > |
 	< DIVIDE : "/" > |
 	< ASSIGN : "=" > |
-	< LESS_THAN : "<" >
-	< LOGIC_AND : "&&" >
+	< LESS_THAN : "<" > |
+	< LOGIC_AND : "&&" > |
 	< OPEN_PAREN : "(" > |
 	< CLOSE_PAREN : ")" > |
 	< OPEN_SQUARE_BRACES : "[" > |
@@ -23,14 +23,19 @@ TOKEN :
 	< OPEN_CURLY_BRACES : "{" > |
 	< CLOSE_CURLY_BRACES : "}" > |
 	< SEMI_COLON : ";" > |
-	< IDENTIFIER: ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])*> | //TODO: complete
-	< INTEGER_LITERAL : ["0"-"9"]("0"-"9")*> |
+
+	< INLINE_COMMENT: "//" > | 
+	< BANG : "!" > | 
+
+	< IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > | //TODO: complete
+	< INTEGER_LITERAL : (["0" - "9"])+ > |
+	
 	< IF : "if" > |
 	< ELSE : "else" > |
 	< WHILE : "while" > |
 	< TRUE : "true" > |
 	< FALSE: "false" > |
-	< DOT : "." > |
+    < DOT : "." > |	
 	< CLASS : "class" > |
 	< PUBLIC : "public" > |
 	< STATIC : "static" > |
@@ -45,11 +50,13 @@ TOKEN :
 	< THIS : "this" > |
 	< INT : "int" > |
 	< RETURN : "return" > |
-	< BOOLEAN : "boolean" > |
-	< BANG : "!" >
-	// | < LINE_COMMENT : ["////"]()> //TODO: Regex for ignoring comments
-	// | < BLOCK_COMMENT : >
+	< BOOLEAN : "boolean" >    
 ;
+
+//SPECIAL_TOKEN: 
+//	<INLINE_COMMENT> (~["\n","\r"])* ("\n"|"\r"|"\r\n") 
+//; 
+
 
 Program : ImportDeclaration ClassDeclaration <EOF> ;
 
@@ -59,58 +66,68 @@ ClassDeclaration : < CLASS > < IDENTIFIER >  ( < EXTENDS > < IDENTIFIER >)? < OP
                     (VarDeclaration)* (MethodDeclaration)*
                     < CLOSE_CURLY_BRACES > ;
 
-VarDeclaration : Type Identifier < SEMI_COLON > ;
+VarDeclaration : Type <INDENTIFIER> < SEMI_COLON > ;
 
-MethodDeclaration : < PUBLIC > Type < IDENTIFIER > < OPEN_PAREN >
-                    (Type < IDENTIFIER > ( < COMMA > Type < IDENTIFIER >)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES >
-                    (VarDeclaration)* (Statement)* < RETURN > Expression <SEMI_COLON > < CLOSE_CURLY_BRACES >
-                    |
-                    < PUBLIC > < STATIC > < VOID > < MAIN > <OPEN_PAREN > < STRING > < OPEN_SQUARE_BRACES > < CLOSE_SQUARE_BRACES >
-                    < IDENTIFIER > < CLOSE_PAREN > < OPEN_CURLY_BRACES > (VarDeclaration)* (Statement)* < CLOSE_CURLY_BRACES >
-                    ;
-
-
-Type : <INT> | <BOOLEAN> | <INT> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> | <IDENTIFIER>;
-
-Statement:
-    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES> |
-    <IF> <OPEN_PAREN> Expression <CLOSE_PAREN> <CLOSE_PAREN> Statement <ELSE> Statement |
-    <WHILE> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement |
-    Expression <SEMI_COLON> |
-    <INDENTIFIER> <ASSIGN> Expression <SEMI_COLON> |
-    <INDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON>
+MethodDeclaration : 
+	< PUBLIC > Type < IDENTIFIER > < OPEN_PAREN > (Type < IDENTIFIER > ( < COMMA > Type < IDENTIFIER >)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES > 
+		(VarDeclaration)* (Statement)* < RETURN > Expression <SEMI_COLON > < CLOSE_CURLY_BRACES >
+    |
+    < PUBLIC > < STATIC > < VOID > < MAIN > <OPEN_PAREN > < STRING > < OPEN_SQUARE_BRACES > < CLOSE_SQUARE_BRACES >
+    < IDENTIFIER > < CLOSE_PAREN > < OPEN_CURLY_BRACES > (VarDeclaration)* (Statement)* < CLOSE_CURLY_BRACES >
 ;
 
 
+Type : <INT> | <BOOLEAN> | <INT> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> | < IDENTIFIER >;
+
+Statement:
+    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES> |
+    <IF> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement <ELSE> Statement |
+    <WHILE> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement |
+    Expression <SEMI_COLON> |
+    <INDENTIFIER> <ASSIGN> Expression <SEMI_COLON> |
+    <INDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CL1OSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON>
+;
+
+
+
 Expression:
-    Expression (<LOGIC_AND> | <LESS_THAN> | <PLUS> | <MINUS> | <TIMES> | <DIVIDE> ) Expression |
-    ArrayExpression <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
-    ArrayExpression <DOT> <LENGTH> |
+    And |
+    ArrayAccessExpression <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
+	ArrayCreateExpression | 
+    ArrayAccessExpression <DOT> <LENGTH> |
     MethodCall |
     <INTEGER_LITERAL> | // how can this be implemented in node structure (is -N a unary op? )
     <TRUE> | <FALSE> |
     <THIS> |
-    <NEW> | <INT> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> |
     <NEW> <INDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN> |
     <BANG> Expression |
     <OPEN_PAREN> Expression <CLOSE_PAREN>
 ;
 
 ArrayExpression:
-    <INDENTIFIER>
-    | <NEW> <INT>
-    | NumericExpression
+	ArrayAccessExpression | ArrayCreateExpression
 ;
 
-NumericExpression:
-    <IDENTIFIER> <DOT> <IDENTIFIER>
+ArrayAccessExpression: 
+	 <INDENTIFIER>
+    | NumericExpression
+; 
+
+ArrayCreateExpression: 
+	<NEW> <INT> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>
+	//TODO: validate new int[]{1,2,3,4,5}
+; 
+
+
+NumericExpression :
+    < INDENTIFIER > <DOT> < IDENTIFIER >
     | <OPEN_PAREN> NumericExpression <CLOSE_PAREN>
 ;
 
 MethodCall:
-    MethodCall <DOT> <IDENTIFIER> <OPEN_PAREN> ( Expression (<COMMA> Expression)* )? <CLOSE_PAREN>
+    MethodCall <DOT> < IDENTIFIER > <OPEN_PAREN> ( Expression (<COMMA> Expression)* )? <CLOSE_PAREN>
     | <THIS>
-    | <IDENTIFIER>
+    | < IDENTIFIER >
 ;
 
 And:
@@ -138,7 +155,10 @@ MultiplicativeExpression:
 ;
 
 Not:
-    (<BANG>)? <IDENTIFIER> | (<BANG>)? <INTEGER_LITERAL> | Expression
-    //DOUBT: can not expand to an expression again?
+    (<BANG>)? Factor | (<BANG>)? Expression
 ;
 
+
+Factor: 
+	< IDENTIFIER > | <INTEGER_LITERAL>
+;
