@@ -2,10 +2,6 @@ PARSER_PACKAGE=pt.up.fe.comp;
 PARSER_CLASS=JmmGrammarParser;
 SMART_NODE_CREATION=false;
 
-// [] -> ? (optional - 0 or 1)
-// {} -> * (zero or more)
-
-
 SKIP : " " | "\t" | "\r" | "\n";
 
 TOKEN :
@@ -68,27 +64,36 @@ ClassDeclaration : < CLASS > < IDENTIFIER >  ( < EXTENDS > < IDENTIFIER >)? < OP
 
 VarDeclaration : Type <INDENTIFIER> < SEMI_COLON > ;
 
-MethodDeclaration : 
-	< PUBLIC > Type < IDENTIFIER > < OPEN_PAREN > (Type < IDENTIFIER > ( < COMMA > Type < IDENTIFIER >)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES > 
-		(VarDeclaration)* (Statement)* < RETURN > Expression <SEMI_COLON > < CLOSE_CURLY_BRACES >
-    |
-    < PUBLIC > < STATIC > < VOID > < MAIN > <OPEN_PAREN > < STRING > < OPEN_SQUARE_BRACES > < CLOSE_SQUARE_BRACES >
-    < IDENTIFIER > < CLOSE_PAREN > < OPEN_CURLY_BRACES > (VarDeclaration)* (Statement)* < CLOSE_CURLY_BRACES >
-;
+
+MethodDeclaration : < PUBLIC > (MainDeclaration | NormalMethodDeclaration) ;
+
+MainDeclaration : < STATIC > < VOID > < MAIN > <OPEN_PAREN > < STRING > < OPEN_SQUARE_BRACES > < CLOSE_SQUARE_BRACES >
+                    < IDENTIFIER > < CLOSE_PAREN > < OPEN_CURLY_BRACES > MethodBody < CLOSE_CURLY_BRACES > ;
 
 
-Type : <INT> | <BOOLEAN> | <INT> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> | < IDENTIFIER >;
+NormalMethodDeclaration : Type < IDENTIFIER > < OPEN_PAREN >
+                    (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES >
+                    MethodBody < RETURN > Expression <SEMI_COLON > < CLOSE_CURLY_BRACES > ;
+
+MethodBody: (VarDeclaration)* (Statement)* ;
+
+
+ParameterDeclaration : Type <IDENTIFIER> ;
+
+Type : <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>)? | <BOOLEAN> | <IDENTIFIER> ;
 
 Statement:
-    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES> |
-    <IF> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement <ELSE> Statement |
-    <WHILE> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement |
-    Expression <SEMI_COLON> |
-    <INDENTIFIER> <ASSIGN> Expression <SEMI_COLON> |
-    <INDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CL1OSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON>
-;
+    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>
+    | <WHILE> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement
+    | Expression <SEMI_COLON>
+    | <INDENTIFIER> <ASSIGN> Expression <SEMI_COLON>
+    | <INDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON> ;
 
+IfStatement: <IF> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement <ELSE> Statement ;
 
+WhileStatement: <WHILE> <OPEN_PAREN> ExpressionAnd <CLOSE_PAREN> <STATEMENT>;
+
+ExpressionAnd :
 
 Expression:
     And |
