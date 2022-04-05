@@ -259,4 +259,7 @@ public class GrammarTest {
         noErrors("1 && 2 < 3 + 4 - 5 * 6 / 7", EXPRESSION);
     }
 
+    @Test
+    public void testExprWithLotsOfParenthesis() { noErrors("((((a.getContainer()))))[10]", EXPRESSION);}
+
 }
