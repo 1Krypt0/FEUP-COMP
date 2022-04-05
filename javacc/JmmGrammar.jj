@@ -65,7 +65,7 @@ TOKEN :
 //; 
 
 
-Program : ImportDeclaration ClassDeclaration <EOF> ;
+Start : ImportDeclaration ClassDeclaration <EOF> ;
 
 ImportDeclaration : (< IMPORT > < IDENTIFIER > (< DOT > < IDENTIFIER >)* < SEMICOLON >)* ;
 
