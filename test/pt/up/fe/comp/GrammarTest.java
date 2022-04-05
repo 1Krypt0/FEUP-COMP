@@ -54,8 +54,28 @@ public class GrammarTest {
     }
 
     @Test
+    public void testImportMulti2() {
+        noErrors("import bar.foo.a.b;", IMPORT);
+    }
+
+
+
+    // FAILING TESTS
+    // --------------------------------------------------------------------------------------------
+
+    @Test
+    public void testEmptyClass() {
+        noErrors("class Foo {}");
+    }
+
+    @Test
     public void testClass() {
         noErrors("class Foo extends Bar {}");
+    }
+
+    @Test
+    public void testArrDecl() {
+        noErrors("class Foo {int[] b;}");
     }
 
     @Test
@@ -64,9 +84,17 @@ public class GrammarTest {
     }
 
     @Test
+    public void testAssign() {
+        noErrors("class Foo {int aInt = 5;}");
+    }
+
+    @Test
     public void testVarDeclString() {
         noErrors("String aString;", "VarDecl");
     }
+    // --------------------------------------------------------------------------------------------
+
+
 
     @Test
     public void testMainMethodEmpty() {

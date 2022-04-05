@@ -1,10 +1,25 @@
 PARSER_PACKAGE=pt.up.fe.comp;
 PARSER_CLASS=JmmGrammarParser;
 SMART_NODE_CREATION=false;
+// TOKENS_ARE_NODES=false;
 
 SKIP : " " | "\t" | "\r" | "\n";
 
 TOKEN :
+
+    // Keywords
+    < CLASS : "class" > |
+    < PUBLIC : "public" > |
+    < STATIC : "static" > |
+    < IMPORT : "import" > |
+    < MAIN : "main" > |
+    < VOID : "void" > |
+    < EXTENDS : "extends" > |
+    < LENGTH : "length"> |
+    < NEW : "new" > |
+    < THIS : "this" > |
+    < RETURN : "return" > |
+
 
     // Operations
 	< PLUS : "+" > |
@@ -44,20 +59,7 @@ TOKEN :
     // Types
     < BOOLEAN : "boolean" >  |
     < STRING : "String" > |
-    < INT : "int" > |
-
-    // Keywords
-	< CLASS : "class" > |
-	< PUBLIC : "public" > |
-	< STATIC : "static" > |
-	< IMPORT : "import" > |
-	< MAIN : "main" > |
-	< VOID : "void" > |
-	< EXTENDS : "extends" > |
-	< LENGTH : "length"> |
-	< NEW : "new" > |
-	< THIS : "this" > |
-	< RETURN : "return" >
+    < INT : "int" >
 ;
 
 // TODO: Correct this implementation
@@ -78,7 +80,7 @@ ClassDeclaration :
     <CLOSE_CURLY_BRACES> ;
 
 VarDeclaration : Type <IDENTIFIER> <SEMICOLON> ;
-
+Type :  SCAN 1 (<STRING> | <BOOLEAN> | <IDENTIFIER> | (<INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>)?)) ;
 
 // MethodDeclaration
 
@@ -99,11 +101,11 @@ MethodBody: (VarDeclaration)* (Statement)* ;
 
 ParameterDeclaration : Type <IDENTIFIER> ;
 
-Type : <STRING> | <BOOLEAN> | <IDENTIFIER> | <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>)? ;
 
-MethodCall: <IDENTIFIER> <OPEN_PAREN> Params <CLOSE_PAREN> ;
 
-Params: AndExpression (<COMMA> AndExpression)* ;
+MethodCall: <IDENTIFIER> <OPEN_PAREN> ParametersExpression <CLOSE_PAREN> ;
+
+ParametersExpression: AndExpression (<COMMA> AndExpression)* ;
 
 
 
