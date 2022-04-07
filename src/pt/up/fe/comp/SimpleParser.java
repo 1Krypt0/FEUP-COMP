@@ -10,6 +10,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.specs.util.SpecsIo;
+import pt.up.fe.specs.util.SpecsSystem;
 
 /**
  * Copyright 2022 SPeCS.
@@ -26,15 +27,21 @@ import pt.up.fe.specs.util.SpecsIo;
 
 public class SimpleParser implements JmmParser {
 
+
     @Override
-    public JmmParserResult parse(String jmmCode, Map<String, String> config) {
+    public JmmParserResult parse(String jmmCode, String startingRule, Map<String, String> config) {
 
         try {
 
             JmmGrammarParser parser = new JmmGrammarParser(SpecsIo.toInputStream(jmmCode));
-            parser.Start();
+            SpecsSystem.invoke(parser, startingRule);
 
             Node root = parser.rootNode();
+
+            if (root == null) {
+                throw new ParseException(parser, "Parsing problems, root is null");
+            }
+
             root.dump("");
 
             if (!(root instanceof JmmNode)) {
