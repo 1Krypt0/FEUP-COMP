@@ -170,7 +170,7 @@ DivisionExpression:
     ArrayExpression (<DIVIDE> ArrayExpression)* ;
 
 ArrayExpression:
-    NegationExpression (ArrayExpression)? ;
+    NegationExpression (ArrayAccessExpression)? ;
 
 NegationExpression:
     ChainedDotExpression | (<BANG> NegationExpression);
@@ -178,7 +178,7 @@ NegationExpression:
 ChainedDotExpression:
     Expression (<DOT> (<LENGTH> | MethodCall))* ;
 
-ArrayExpression:
+ArrayAccessExpression:
     <OPEN_SQUARE_BRACES>
         AndExpression
     <CLOSE_SQUARE_BRACES> ;
