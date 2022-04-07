@@ -1,7 +1,7 @@
 PARSER_PACKAGE=pt.up.fe.comp;
 PARSER_CLASS=JmmGrammarParser;
 SMART_NODE_CREATION=false;
-// TOKENS_ARE_NODES=false;
+TOKENS_ARE_NODES=false;
 
 SKIP : " " | "\t" | "\r" | "\n";
 
@@ -82,7 +82,7 @@ ClassDeclaration :
     <CLOSE_CURLY_BRACES> ;
 
 VarDeclaration : Type <IDENTIFIER> <SEMICOLON> ;
-Type :  SCAN 1 (<STRING> | <BOOLEAN> | <IDENTIFIER> | (<INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>)?)) ;
+Type :  SCAN 2 (<STRING> | <BOOLEAN> | <IDENTIFIER> | (<INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>)?)) ;
 
 // MethodDeclaration
 
@@ -200,3 +200,32 @@ Expression:
     | <OPEN_PAREN> AndExpression <CLOSE_PAREN>
     | <NEW> (<INT> ArrayExpression) | (<IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>) ;
 
+
+
+// Injections for the implementation of JmmNode
+// Since this is injected into BaseNode, it affects only non-terminals
+INJECT BaseNode :
+		import pt.up.fe.comp.jmm.ast.JmmNode;
+		import pt.up.fe.comp.jmm.ast.AJmmNode;
+		import pt.up.fe.specs.util.SpecsCollections;
+		extends AJmmNode
+{
+    @Override
+    public List<JmmNode> getChildren() {
+
+        return SpecsCollections.cast(children(), JmmNode.class);
+    }
+
+    @Override
+    public void add(JmmNode child, int index) {
+
+        if (child instanceof Node) {
+
+            addChild(index, (Node) child);
+        } else {
+
+            throw new RuntimeException("Node " + child + " is not a Node.");
+        }
+
+    }
+}
