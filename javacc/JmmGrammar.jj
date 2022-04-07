@@ -33,8 +33,6 @@ TOKEN :
     < BANG : "!" > |
 
 	// Literals and Factors
-	< IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > |
-    < INTEGER_LITERAL : (["0" - "9"])+ > |
     < TRUE : "true" > |
     < FALSE: "false" > |
 
@@ -59,7 +57,11 @@ TOKEN :
     // Types
     < BOOLEAN : "boolean" >  |
     < STRING : "String" > |
-    < INT : "int" >
+    < INT : "int" > |
+
+    // Regex
+    < IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > |
+    < INTEGER_LITERAL : (["0" - "9"])+ >
 ;
 
 // TODO: Correct this implementation
