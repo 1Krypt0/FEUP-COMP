@@ -115,7 +115,8 @@ ParametersExpression: AndExpression (<COMMA> AndExpression)* ;
 
 Statement:
     <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>
-    | <WHILE> <OPEN_PAREN> Expression <CLOSE_PAREN> Statement
+    | WhileStatement
+    | IfStatement
     | Expression <SEMICOLON>
     | <IDENTIFIER> <ASSIGN> Expression <SEMICOLON>
     | <IDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON> ;
@@ -125,8 +126,8 @@ IfStatement:
         Expression
     <CLOSE_PAREN>
         Statement
-    <ELSE>
-        Statement ;
+    (<ELSE>
+        Statement)?;
 
 WhileStatement:
     <WHILE> <OPEN_PAREN>
