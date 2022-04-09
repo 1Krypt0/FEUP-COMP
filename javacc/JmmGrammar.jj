@@ -86,7 +86,7 @@ Type :  SCAN 2 (<STRING> | <BOOLEAN> | <IDENTIFIER> | (<INT> (<OPEN_SQUARE_BRACE
 
 // MethodDeclaration
 
-MethodDeclaration : <PUBLIC> (MainDeclaration | MethodDeclaration) ;
+MethodDeclaration : <PUBLIC> (MainDeclaration | ClassMethodDeclaration) ;
 
 MainDeclaration :
     <STATIC> <VOID> <MAIN>
@@ -94,7 +94,7 @@ MainDeclaration :
     <IDENTIFIER>
     <CLOSE_PAREN> <OPEN_CURLY_BRACES> MethodBody <CLOSE_CURLY_BRACES> ;
 
-MethodDeclaration :
+ClassMethodDeclaration :
     Type <IDENTIFIER> <OPEN_PAREN>
     (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES >
     MethodBody < RETURN > Expression <SEMICOLON > < CLOSE_CURLY_BRACES > ;
@@ -102,8 +102,6 @@ MethodDeclaration :
 MethodBody: (VarDeclaration)* (Statement)* ;
 
 ParameterDeclaration : Type <IDENTIFIER> ;
-
-
 
 MethodCall: <IDENTIFIER> <OPEN_PAREN> ParametersExpression <CLOSE_PAREN> ;
 
@@ -113,13 +111,14 @@ ParametersExpression: AndExpression (<COMMA> AndExpression)* ;
 
 // Logic and Control
 
-Statement:
+Statement: SCAN 2 (
     <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>
     | WhileStatement
     | IfStatement
-    | Expression <SEMICOLON>
     | <IDENTIFIER> <ASSIGN> Expression <SEMICOLON>
-    | <IDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON> ;
+    | <IDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON>
+    | Expression <SEMICOLON>)
+;
 
 IfStatement:
     <IF> <OPEN_PAREN>
@@ -194,12 +193,12 @@ Keyword:
     | <THIS>;
 
 
-Expression:
+Expression:  (
     <INTEGER_LITERAL>
-    | <IDENTIFIER>
     | Keyword
+    | <IDENTIFIER>
     | <OPEN_PAREN> AndExpression <CLOSE_PAREN>
-    | <NEW> (<INT> ArrayExpression) | (<IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>) ;
+    | <NEW> ((<IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>) | <INT> ArrayExpression));
 
 
 
