@@ -36,20 +36,22 @@ public class SimpleParser implements JmmParser {
             JmmGrammarParser parser = new JmmGrammarParser(SpecsIo.toInputStream(jmmCode));
             SpecsSystem.invoke(parser, startingRule);
 
-            Node root = parser.rootNode();
+            // Node root = parser.rootNode();
+
+            var root = ((JmmNode) parser.rootNode()).sanitize();
 
             if (root == null) {
                 throw new ParseException(parser, "Parsing problems, root is null");
             }
 
-            root.dump("");
+            System.out.println(root.toTree());
 
-            if (!(root instanceof JmmNode)) {
+            /*if (!(root instanceof JmmNode)) {
                 return JmmParserResult.newError(new Report(ReportType.WARNING, Stage.SYNTATIC, -1,
                         "JmmNode interface not yet implemented, returning null root node"));
-            }
+            }*/
 
-            return new JmmParserResult((JmmNode) root, Collections.emptyList(), config);
+            return new JmmParserResult(root, Collections.emptyList(), config);
 
         } catch (Exception ex) {
             var e = TestUtils.getException(ex, ParseException.class);
