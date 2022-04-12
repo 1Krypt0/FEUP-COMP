@@ -96,7 +96,7 @@ MainDeclaration :
 ClassMethodDeclaration :
     Type <IDENTIFIER> <OPEN_PAREN>
     (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES >
-    MethodBody < RETURN > Expression <SEMICOLON > < CLOSE_CURLY_BRACES > ;
+    MethodBody < RETURN > AndExpression <SEMICOLON > < CLOSE_CURLY_BRACES > ;
 
 MethodBody: (VarDeclaration)* (Statement)* ;
 
@@ -143,30 +143,20 @@ AndExpression :
 
 LessThanExpression:
     (
-        AdditiveExpression
-        | SubtractionExpression
+       AdditiveExpression
    )
-    ( <LESS_THAN> ( AdditiveExpression | SubtractionExpression) )* ;
+    ( <LESS_THAN> ( AdditiveExpression)  )* ;
 
 AdditiveExpression:
     (
         MultiplicationExpression
-        | DivisionExpression
     )
-    (   <PLUS> (MultiplicationExpression | DivisionExpression))* ;
+    (   (<PLUS> | <MINUS>) (MultiplicationExpression))* ;
 
-SubtractionExpression:
-    (
-        MultiplicationExpression
-        | DivisionExpression
-    )
-    (  <MINUS> (MultiplicationExpression | DivisionExpression))* ;
 
 MultiplicationExpression:
-    ArrayExpression (<TIMES> ArrayExpression)* ;
+    ArrayExpression ( (<TIMES> | <DIVIDE>) ArrayExpression)* ;
 
-DivisionExpression:
-    ArrayExpression (<DIVIDE> ArrayExpression)* ;
 
 ArrayExpression:
     SCAN 2 NegationExpression (ArrayAccessExpression)? ;
