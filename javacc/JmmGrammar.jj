@@ -103,7 +103,7 @@ MethodBody: (VarDeclaration)* (Statement)* ;
 
 ParameterDeclaration : Type <IDENTIFIER> ;
 
-MethodCall: <IDENTIFIER> <OPEN_PAREN> ParametersExpression <CLOSE_PAREN> ;
+MethodCall: <IDENTIFIER> <OPEN_PAREN> (ParametersExpression)? <CLOSE_PAREN> ;
 
 ParametersExpression: AndExpression (<COMMA> AndExpression)* ;
 
@@ -111,12 +111,11 @@ ParametersExpression: AndExpression (<COMMA> AndExpression)* ;
 
 // Logic and Control
 
-Statement: SCAN 2 (
+Statement: (
     <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>
     | WhileStatement
     | IfStatement
-    | <IDENTIFIER> <ASSIGN> Expression <SEMICOLON>
-    | <IDENTIFIER> <OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES> <ASSIGN> Expression <SEMICOLON>
+    | SCAN 2 <IDENTIFIER> (<OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES>)? <ASSIGN> Expression <SEMICOLON>
     | Expression <SEMICOLON>)
 ;
 
@@ -170,10 +169,10 @@ DivisionExpression:
     ArrayExpression (<DIVIDE> ArrayExpression)* ;
 
 ArrayExpression:
-    NegationExpression (ArrayAccessExpression)? ;
+    SCAN 2 NegationExpression (ArrayAccessExpression)? ;
 
 NegationExpression:
-    ChainedDotExpression | (<BANG> NegationExpression);
+    (<BANG>)? ChainedDotExpression;
 
 ChainedDotExpression:
     Expression (<DOT> (<LENGTH> | MethodCall))* ;
@@ -196,9 +195,9 @@ Keyword:
 Expression:  (
     <INTEGER_LITERAL>
     | Keyword
-    | <IDENTIFIER>
     | <OPEN_PAREN> AndExpression <CLOSE_PAREN>
-    | <NEW> ((<IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>) | <INT> ArrayExpression));
+    | <NEW> ((<INT> ArrayAccessExpression | <IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>)))
+    | <IDENTIFIER>;
 
 
 
