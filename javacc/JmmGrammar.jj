@@ -77,8 +77,7 @@ ImportDeclaration : (< IMPORT > < IDENTIFIER > (< DOT > < IDENTIFIER >)* < SEMIC
 ClassDeclaration :
     <CLASS> <IDENTIFIER> (<EXTENDS> <IDENTIFIER>)?
     <OPEN_CURLY_BRACES>
-        (VarDeclaration)*
-        (MethodDeclaration)*
+        (VarDeclaration)*  (MethodDeclaration)*
     <CLOSE_CURLY_BRACES> ;
 
 VarDeclaration : Type <IDENTIFIER> <SEMICOLON> ;
@@ -115,13 +114,14 @@ Statement: (
     <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>
     | WhileStatement
     | IfStatement
-    | SCAN 2 <IDENTIFIER> (<OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES>)? <ASSIGN> Expression <SEMICOLON>
-    | Expression <SEMICOLON>)
+    | SCAN 2 (<IDENTIFIER> (<OPEN_SQUARE_BRACES> Expression <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression <SEMICOLON>)
+    | AndExpression <SEMICOLON>
+    )
 ;
 
 IfStatement:
     <IF> <OPEN_PAREN>
-        Expression
+        AndExpression
     <CLOSE_PAREN>
         Statement
     (<ELSE>
@@ -146,21 +146,21 @@ LessThanExpression:
         AdditiveExpression
         | SubtractionExpression
    )
-    ( <LESS_THAN> (AdditiveExpression | SubtractionExpression) )* ;
+    ( <LESS_THAN> ( AdditiveExpression | SubtractionExpression) )* ;
 
 AdditiveExpression:
     (
         MultiplicationExpression
         | DivisionExpression
     )
-    (<PLUS> (MultiplicationExpression | DivisionExpression))* ;
+    (   <PLUS> (MultiplicationExpression | DivisionExpression))* ;
 
 SubtractionExpression:
     (
         MultiplicationExpression
         | DivisionExpression
     )
-    (<MINUS> (MultiplicationExpression | DivisionExpression))* ;
+    (  <MINUS> (MultiplicationExpression | DivisionExpression))* ;
 
 MultiplicationExpression:
     ArrayExpression (<TIMES> ArrayExpression)* ;

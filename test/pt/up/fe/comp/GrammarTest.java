@@ -22,6 +22,7 @@ public class GrammarTest {
     private static final String INSTANCE_METHOD = "MethodDeclaration";
     private static final String STATEMENT = "Statement";
     private static final String EXPRESSION = "AndExpression";
+    private static final String VARDECL = "VarDeclaration";
 
     private static void noErrors(String code, String grammarRule) {
         if (grammarRule.isEmpty()) {
@@ -58,11 +59,6 @@ public class GrammarTest {
         noErrors("import bar.foo.a.b;", IMPORT);
     }
 
-
-
-    // FAILING TESTS
-    // --------------------------------------------------------------------------------------------
-
     @Test
     public void testEmptyClass() {
         noErrors("class Foo {}");
@@ -83,69 +79,93 @@ public class GrammarTest {
         noErrors("class Foo {int a; int[] b; int c; boolean d; Bar e;}");
     }
 
-    @Test
-    public void testAssign() {
-        noErrors("class Foo {int aInt = 5;}");
-    }
 
     @Test
-    public void testVarDeclString() {
-        noErrors("String aString;", "VarDecl");
-    }
-    // --------------------------------------------------------------------------------------------
+    public void testStmtAssign() {noErrors("a=b;", STATEMENT); }
 
+    @Test
+    public void testExprNewClass() {noErrors("new Foo();", EXPRESSION);}
 
 
     @Test
-    public void testMainMethodEmpty() {
-        noErrors("public static void main(String[] args) {}", MAIN_METHOD);
-    }
+    public void testStatement() {noErrors("c  = a + 1;", STATEMENT);}
 
     @Test
-    public void testInstanceMethodEmpty() {
-        noErrors("public int foo(int anInt, int[] anArray, boolean aBool, String aString) {return a;}",
-                INSTANCE_METHOD);
-    }
+    public void testStmtArrayAssign() { noErrors("anArray[a]=b;", STATEMENT); }
+
+    @Test
+    public void testStmtIfElseWithoutBrackets() { noErrors("if(a)ifStmt;else elseStmt;", STATEMENT); }
+
+    @Test
+    public void testInstanceMethodEmpty() {noErrors("public int foo(int anInt, int[] anArray, boolean aBool, String aString) {return a;}", INSTANCE_METHOD);}
+
+    @Test
+    public void testExprNewArray() {noErrors("new int[!a]", "Expression");}
+
+
+
+    // FAILING TESTS
+    // -------------------------------------------------------------------------------------------
+
+
+    @Test
+    public void testMainMethodEmpty() {noErrors("public static void main(String[] args) {}", MAIN_METHOD);}
+
+
+    @Test
+    public void testCallArrayAccessLengthChainTest() { noErrors("callee.foo()", EXPRESSION);}
+
+    @Test
+    public void testCallArrayAccessLengthChain() { noErrors("callee.foo()[10].length", EXPRESSION);}
+
+    @Test
+    public void testExprWithLotsOfParenthesis() { noErrors("((((a.getContainer()))))[10]", EXPRESSION);}
+
+    @Test
+    public void testExprMemberCallChain() {noErrors("callee.level1().level2(false, 10).level3(true)", EXPRESSION);}
 
     @Test
     public void testStmtScope() {
         noErrors("{a; b; c;}", STATEMENT);
     }
+    @Test
+    public void testStmtWhile() {
+        noErrors("while(a){whileStmt1;whileStmt2;}", STATEMENT);
+    }
+    @Test
+    public void testStmtWhileWithoutBrackets() {
+        noErrors("while(a)whileStmt1;", STATEMENT);
+    }
+    @Test
+    public void testStmtIfElse() {noErrors("if(a){ifStmt1;ifStmt2;}else{elseStmt1;elseStmt2;}", STATEMENT);}
+
+
+    // --------------------------------------------------------------------------------------------
+
+
+    @Test
+    public void testAssign() {noErrors("class Foo {int aInt;}");}
+
+    @Test
+    public void testVarDeclString() { noErrors("String aString;", VARDECL);}
+
+    @Test
+    public void testVarDeclArray() { noErrors("int[] anArray;", VARDECL);}
+
+
 
     @Test
     public void testStmtEmptyScope() {
         noErrors("{}", STATEMENT);
     }
 
-    @Test
-    public void testStmtIfElse() {
-        noErrors("if(a){ifStmt1;ifStmt2;}else{elseStmt1;elseStmt2;}", STATEMENT);
-    }
 
-    @Test
-    public void testStmtIfElseWithoutBrackets() {
-        noErrors("if(a)ifStmt;else elseStmt;", STATEMENT);
-    }
 
-    @Test
-    public void testStmtWhile() {
-        noErrors("while(a){whileStmt1;whileStmt2;}", STATEMENT);
-    }
 
-    @Test
-    public void testStmtWhileWithoutBrackets() {
-        noErrors("while(a)whileStmt1;", STATEMENT);
-    }
 
-    @Test
-    public void testStmtAssign() {
-        noErrors("a=b;", STATEMENT);
-    }
 
-    @Test
-    public void testStmtArrayAssign() {
-        noErrors("anArray[a]=b;", STATEMENT);
-    }
+
+
 
     @Test
     public void testExprTrue() {
@@ -182,10 +202,7 @@ public class GrammarTest {
         noErrors("foo.bar(10, a, true)", EXPRESSION);
     }
 
-    @Test
-    public void testExprMemberCallChain() {
-        noErrors("callee.level1().level2(false, 10).level3(true)", EXPRESSION);
-    }
+
 
     @Test
     public void testExprLength() {
@@ -212,25 +229,16 @@ public class GrammarTest {
         noErrors("(a)[10]", EXPRESSION);
     }
 
-    @Test
-    public void testCallArrayAccessLengthChain() {
-        noErrors("callee.foo()[10].length", EXPRESSION);
-    }
+
 
     @Test
     public void testExprNot() {
         noErrors("!true", EXPRESSION);
     }
 
-    @Test
-    public void testExprNewArray() {
-        noErrors("new int[!a]", EXPRESSION);
-    }
 
-    @Test
-    public void testExprNewClass() {
-        noErrors("new Foo()", EXPRESSION);
-    }
+
+
 
     @Test
     public void testExprMult() {
@@ -287,7 +295,6 @@ public class GrammarTest {
         noErrors("1 && 2 < 3 + 4 - 5 * 6 / 7", EXPRESSION);
     }
 
-    @Test
-    public void testExprWithLotsOfParenthesis() { noErrors("((((a.getContainer()))))[10]", EXPRESSION);}
+
 
 }
