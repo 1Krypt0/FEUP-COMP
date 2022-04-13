@@ -3,6 +3,16 @@ PARSER_CLASS=JmmGrammarParser;
 SMART_NODE_CREATION=false;
 TOKENS_ARE_NODES=false;
 
+/*
+    Notes on AST annotation:
+    - Name of a variable
+    - Value of an integer or boolean
+    - Is the declared variable an array?
+    - If the class extends another class and which
+
+*/
+
+
 SKIP : " " | "\t" | "\r" | "\n";
 
 TOKEN :
@@ -70,9 +80,18 @@ TOKEN :
 //; 
 
 
-Start : ImportDeclaration ClassDeclaration <EOF> ;
+Start #Init : ImportDeclaration ClassDeclaration <EOF> ;
 
-ImportDeclaration : (< IMPORT > < IDENTIFIER > (< DOT > < IDENTIFIER >)* < SEMICOLON >)* ;
+ImportDeclaration #void:
+    (
+        ( ((< IMPORT > < IDENTIFIER > {jjtThis.put("package", lastConsumedToken.getImage());}) )
+        (ChainedImportDeclaration)? ) #Import <SEMICOLON>
+    )* ;
+
+ChainedImportDeclaration #void:
+    (((<DOT> <IDENTIFIER> {jjtThis.put("subpackage", lastConsumedToken.getImage());}))  (ChainedImportDeclaration)?) #ChainedImport
+;
+
 
 ClassDeclaration :
     <CLASS> <IDENTIFIER> (<EXTENDS> <IDENTIFIER>)?
@@ -137,34 +156,43 @@ WhileStatement:
 
 // Operators
 
-AndExpression :
+AndExpression #void :
     LessThanExpression
-    (<LOGIC_AND> LessThanExpression)* ;
+    ( (<LOGIC_AND> LessThanExpression { jjtThis.put("op", "and"); }) #BinOp(2)) *;
 
-LessThanExpression:
+LessThanExpression #void:
     (
        AdditiveExpression
-   )
-    ( <LESS_THAN> ( AdditiveExpression)  )* ;
-
-AdditiveExpression:
-    (
-        MultiplicationExpression
     )
-    (   (<PLUS> | <MINUS>) (MultiplicationExpression))* ;
+    ( (<LESS_THAN> AdditiveExpression { jjtThis.put("op", "lt"); }) #BinOp(2) )* ;
 
 
-MultiplicationExpression:
-    ArrayExpression ( (<TIMES> | <DIVIDE>) ArrayExpression)* ;
+
+AdditiveExpression #void:
+    MultiplicationExpression
+    (
+         (<PLUS> MultiplicationExpression { jjtThis.put("op", "add"); }) #BinOp(2)
+        |
+         (<MINUS> MultiplicationExpression { jjtThis.put("op", "sub"); }) #BinOp(2)
+    )* ;
 
 
-ArrayExpression:
+MultiplicationExpression #void:
+    ArrayExpression
+        (
+             (<TIMES> ArrayExpression { jjtThis.put("op", "mult"); }) #BinOp(2)
+            |
+             (<DIVIDE> ArrayExpression { jjtThis.put("op", "div"); }) #BinOp(2)
+        )* ;
+
+
+ArrayExpression #void:
     SCAN 2 NegationExpression (ArrayAccessExpression)? ;
 
-NegationExpression:
+NegationExpression #void:
     (<BANG>)? ChainedDotExpression;
 
-ChainedDotExpression:
+ChainedDotExpression #void:
     Expression (<DOT> (<LENGTH> | MethodCall))* ;
 
 ArrayAccessExpression:
@@ -176,18 +204,18 @@ ArrayAccessExpression:
 
 // Expression
 
-Keyword:
-    <TRUE>
-    | <FALSE>
-    | <THIS>;
+Keyword #void:
+    <TRUE> #True
+    | <FALSE> #False
+    | <THIS> #This;
 
 
-Expression:  (
-    <INTEGER_LITERAL>
+Expression:
+    (<INTEGER_LITERAL> { jjtThis.put("value", lastConsumedToken.getImage()); }) #IntegerLiteral
     | Keyword
-    | <OPEN_PAREN> AndExpression <CLOSE_PAREN>
-    | <NEW> ((<INT> ArrayAccessExpression | <IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>)))
-    | <IDENTIFIER>;
+    | <NEW> ((<INT> ArrayAccessExpression | <IDENTIFIER> <OPEN_PAREN> <CLOSE_PAREN>))
+    | ( <IDENTIFIER> { jjtThis.put("value", lastConsumedToken.getImage()); }) #ID
+    | <OPEN_PAREN> AndExpression <CLOSE_PAREN>;
 
 
 
