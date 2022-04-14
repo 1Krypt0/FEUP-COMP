@@ -93,37 +93,57 @@ ChainedImportDeclaration #void:
 ;
 
 
-ClassDeclaration :
-    <CLASS> <IDENTIFIER> (<EXTENDS> <IDENTIFIER>)?
+ClassDeclaration #ClassDecl:
+    <CLASS> <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} ((<EXTENDS> <IDENTIFIER> {jjtThis.put("extended_class", lastConsumedToken.getImage());}) #ClassInheritance)?
     <OPEN_CURLY_BRACES>
         (VarDeclaration)*  (MethodDeclaration)*
     <CLOSE_CURLY_BRACES> ;
 
-VarDeclaration : Type <IDENTIFIER> <SEMICOLON> ;
-Type :  SCAN 2 (<STRING> | <BOOLEAN> | <IDENTIFIER> | (<INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>)?)) ;
+//DOUBT: How to handle int [] a as the same node
+VarDeclaration #VarDecl: Type <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} <SEMICOLON> ;
+Type #void:
+    SCAN 2
+    (
+        (<STRING> #Str) | (<BOOLEAN> #Bool) | (<IDENTIFIER> #Id)
+        | (
+            <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> #Array)? #Int //TODO: maybe {jjtThis.put("sub_type", "array");}
+        )
+    ) ;
 
 // MethodDeclaration
 
 MethodDeclaration : <PUBLIC> (MainDeclaration | ClassMethodDeclaration) ;
 
-MainDeclaration :
-    <STATIC> <VOID> <MAIN>
+MainDeclaration #Main:
+    <STATIC> <VOID> <MAIN> {jjtThis.put("name", "main");}
     <OPEN_PAREN> <STRING> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>
-    <IDENTIFIER>
-    <CLOSE_PAREN> <OPEN_CURLY_BRACES> MethodBody <CLOSE_CURLY_BRACES> ;
+    <IDENTIFIER> {jjtThis.put("arg_array", lastConsumedToken.getImage());} //DOUBT: Does this need to save other information
+    <CLOSE_PAREN> <OPEN_CURLY_BRACES> MethodBodyDeclaration <CLOSE_CURLY_BRACES> ;
 
-ClassMethodDeclaration :
-    Type <IDENTIFIER> <OPEN_PAREN>
-    (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)? < CLOSE_PAREN > < OPEN_CURLY_BRACES >
-    MethodBody < RETURN > AndExpression <SEMICOLON > < CLOSE_CURLY_BRACES > ;
+//DOUBT: how to handle return
+ClassMethodDeclaration #MethodDecl:
+    Type {jjtThis.put("return_type", lastConsumedToken.getImage());}
+    <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}
+    <OPEN_PAREN>
+    (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)?
+    < CLOSE_PAREN >
+    < OPEN_CURLY_BRACES >
+    MethodBodyDeclaration < RETURN > AndExpression #Return <SEMICOLON > < CLOSE_CURLY_BRACES > ;
 
-MethodBody: (VarDeclaration)* (Statement)* ;
 
-ParameterDeclaration : Type <IDENTIFIER> ;
+// DOUBT: Can this be void?
+MethodBodyDeclaration #MethodBody: (VarDeclaration)* (Statement)* ;
 
-MethodCall: <IDENTIFIER> <OPEN_PAREN> (ParametersExpression)? <CLOSE_PAREN> ;
+ParameterDeclaration #void:
+    (Type {jjtThis.put("type", lastConsumedToken.getImage());}
+    <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}) #Param;
 
-ParametersExpression: AndExpression (<COMMA> AndExpression)* ;
+//DOUBT: Do the arguments need to be stored in a node
+MethodCallDeclaration #MethodCall:
+    (<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());})
+    <OPEN_PAREN> (ArgumentsExpression)? <CLOSE_PAREN> ;
+
+ArgumentsExpression: AndExpression (<COMMA> AndExpression)* ;
 
 
 
@@ -138,7 +158,8 @@ Statement: (
     )
 ;
 
-IfStatement:
+// DOUBT: Should this be void or a more general IfStatement?
+IfStatement #void:
     <IF> <OPEN_PAREN>
         AndExpression
     <CLOSE_PAREN>
@@ -146,7 +167,7 @@ IfStatement:
     (<ELSE>
         Statement)?;
 
-WhileStatement:
+WhileStatement #void:
     <WHILE> <OPEN_PAREN>
         AndExpression
     <CLOSE_PAREN>
@@ -190,12 +211,13 @@ ArrayExpression #void:
     SCAN 2 NegationExpression (ArrayAccessExpression)? ;
 
 NegationExpression #void:
-    (<BANG>)? ChainedDotExpression;
+    (<BANG> #Negation )? ChainedDotExpression;
 
 ChainedDotExpression #void:
-    Expression (<DOT> (<LENGTH> | MethodCall))* ;
+    Expression (<DOT> (<LENGTH> | MethodCallDeclaration))* ;
 
-ArrayAccessExpression:
+// DOUBT: Does this need a node?
+ArrayAccessExpression #ArrayAccess:
     <OPEN_SQUARE_BRACES>
         AndExpression
     <CLOSE_SQUARE_BRACES> ;
@@ -210,6 +232,7 @@ Keyword #void:
     | <THIS> #This;
 
 
+// DOUBT: How to handle the third case
 Expression:
     (<INTEGER_LITERAL> { jjtThis.put("value", lastConsumedToken.getImage()); }) #IntegerLiteral
     | Keyword
