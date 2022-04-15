@@ -39,6 +39,7 @@ public class SimpleParser implements JmmParser {
             // Node root = parser.rootNode();
 
             var root = ((JmmNode) parser.rootNode()).sanitize();
+            System.out.println(root.toTree());
 
             if (root == null) {
                 throw new ParseException(parser, "Parsing problems, root is null");
