@@ -128,8 +128,10 @@ ClassMethodDeclaration #MethodDecl:
     (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)?
     < CLOSE_PAREN >
     < OPEN_CURLY_BRACES >
-    MethodBodyDeclaration < RETURN > AndExpression #Return <SEMICOLON > < CLOSE_CURLY_BRACES > ;
+    MethodBodyDeclaration ReturnStatement < CLOSE_CURLY_BRACES > ;
 
+ReturnStatement:
+    < RETURN > AndExpression < SEMICOLON > ;
 
 // DOUBT: Can this be void?
 MethodBodyDeclaration #MethodBody: (VarDeclaration)* (Statement)* ;
