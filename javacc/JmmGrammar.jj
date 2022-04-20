@@ -101,13 +101,13 @@ ClassDeclaration #ClassDecl:
 
 //DOUBT: How to handle int [] a as the same node
 VarDeclaration #VarDecl: Type <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} <SEMICOLON> ;
-Type #void:
+Type:
     SCAN 2
     (
-        (<STRING> #Str) | (<BOOLEAN> #Bool) | (<IDENTIFIER> #Id)
-        | (
-            <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> #Array)? #Int //TODO: maybe {jjtThis.put("sub_type", "array");}
-        )
+        (<STRING> {jjtThis.put("type","string");}) | (<BOOLEAN> {jjtThis.put("type","bool");}) | (<IDENTIFIER>  {jjtThis.put("type", lastConsumedToken.getImage());})
+        |
+            <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> {jjtThis.put("is_array", "True");} )? {jjtThis.put("type","int");}//TODO: maybe {jjtThis.put("sub_type", "array");}
+        // Usar get or default no mapa, sendo o default a false
     ) ;
 
 // MethodDeclaration
@@ -121,9 +121,9 @@ MainDeclaration #Main:
     <CLOSE_PAREN> <OPEN_CURLY_BRACES> MethodBodyDeclaration <CLOSE_CURLY_BRACES> ;
 
 //DOUBT: how to handle return
-ClassMethodDeclaration #MethodDecl:
-    Type {jjtThis.put("return_type", lastConsumedToken.getImage());}
-    <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}
+ClassMethodDeclaration #MethodDecl: //DOUBT: Should return be a node?
+    Type {jjtThis.put("return_type", lastConsumedToken.getImage());} //DOUBT: WHat happens with type array? only ] is stored?
+    <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} //TODO
     <OPEN_PAREN>
     (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)?
     < CLOSE_PAREN >
@@ -148,14 +148,19 @@ ParameterDeclaration #void:
 //DOUBT: How do we turn the statement void?
 //DOUBT: Same thing as int [] a, is there a way of a[10] = 3, a[10] being a full node instead of
 //DOUBT: (#Variable #Value) #Assign ? Expression and AndExpression is #Assign are visited? Or do we need to store something?
-Statement: (
-    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>
+Statement #void: (
+    BlockStatement
     | WhileStatement
     | IfStatement
     | SCAN 2 ((<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} (<OPEN_SQUARE_BRACES> Expression #ArrayAccess <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression) #Assign <SEMICOLON>)
     | AndExpression <SEMICOLON>
     )
 ;
+
+
+BlockStatement:
+    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>;
+
 
 // DOUBT: Should this be void or a more general IfStatement?
 // DOUBT: Do we need separate ifcondition, ifstatement and elsestatement?
@@ -230,7 +235,7 @@ NegationExpression #void:
 
 // DOUBT: How can we turn the dot link into a right child ?
 ChainedDotExpression #void:
-    Expression (<DOT> (<LENGTH> #Length | MethodCallDeclaration) #DotLinked)* ; //TODO
+    Expression (<DOT> (<LENGTH> #Length | MethodCallDeclaration) #DotLinked)* ; //TODO: place the call as right child
 
 // DOUBT: Does this need a node?
 ArrayAccessExpression #void:
