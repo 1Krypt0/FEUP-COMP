@@ -106,7 +106,7 @@ Type:
     (
         (<STRING> {jjtThis.put("type","string");}) | (<BOOLEAN> {jjtThis.put("type","bool");}) | (<IDENTIFIER>  {jjtThis.put("type", lastConsumedToken.getImage());})
         |
-            <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> {jjtThis.put("is_array", "True");} )? {jjtThis.put("type","int");}//TODO: maybe {jjtThis.put("sub_type", "array");}
+            <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> {jjtThis.put("is_array", "True");} )? {jjtThis.put("type","int");}
         // Usar get or default no mapa, sendo o default a false
     ) ;
 
@@ -137,8 +137,7 @@ ReturnStatement:
 MethodBodyDeclaration #MethodBody: (VarDeclaration)* (Statement)* ;
 
 ParameterDeclaration #void:
-    (Type {jjtThis.put("type", lastConsumedToken.getImage());}
-    <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}) #Param;
+    (Type <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}) #Param;
 
 
 
