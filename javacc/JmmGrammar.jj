@@ -141,8 +141,6 @@ ParameterDeclaration #void:
 
 
 
-
-
 // Logic and Control
 
 
@@ -219,10 +217,7 @@ ArrayExpression #void:
     SCAN 2 NegationExpression (ArrayAccessExpression)? ; //TODO
 
 
-//DOUBT: Do the arguments need to be stored in a node
-MethodCallDeclaration #MethodCall:
-    (<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());})
-    <OPEN_PAREN> (ArgumentsExpression)? <CLOSE_PAREN> ;
+
 
 //DOUBT: Should we store more info ? Do we need the #Arg node?
 ArgumentsExpression #void: (AndExpression #Arg) (<COMMA> AndExpression #Arg)* ;
@@ -231,12 +226,19 @@ ArgumentsExpression #void: (AndExpression #Arg) (<COMMA> AndExpression #Arg)* ;
 //DOUBT: How to best handle the !, can we generate a Negation node? Or op =?
 //DOUBT: If we choose "op" do we need to place to also alert non existence of !?
 NegationExpression #void:
-    (<BANG> #Negation)? ChainedDotExpression; //TODO
+    (<BANG> NegationExpression) #Negation
+    | ChainedDotExpression;
 
+
+//DOUBT: Do the arguments need to be stored in a node
+MethodCallDeclaration #MethodCall:
+    (<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());})
+    <OPEN_PAREN> (ArgumentsExpression)? <CLOSE_PAREN> ;
 
 // DOUBT: How can we turn the dot link into a right child ?
 ChainedDotExpression #void:
     Expression (<DOT> (<LENGTH> #Length | MethodCallDeclaration) #DotLinked)* ; //TODO: place the call as right child
+
 
 // DOUBT: Does this need a node?
 ArrayAccessExpression #void:
@@ -260,6 +262,7 @@ Expression #void:
     | Keyword
     | <NEW> (((<INT> ArrayAccessExpression #ArrayCreation) | (<IDENTIFIER> { jjtThis.put("name", lastConsumedToken.getImage()); } <OPEN_PAREN> <CLOSE_PAREN>) #ClassCreation)) //TODO
     | ( <IDENTIFIER> { jjtThis.put("name", lastConsumedToken.getImage()); }) #ID //DOUBT: value or name?
+    | MethodCallDeclaration
     | <OPEN_PAREN> AndExpression <CLOSE_PAREN>;
 
 
