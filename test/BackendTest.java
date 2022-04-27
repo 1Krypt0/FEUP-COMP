@@ -20,7 +20,11 @@ import pt.up.fe.comp.TestUtils;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsStrings;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BackendTest {
+
 
     // @Test
     // public void testHelloWorld() {
@@ -36,5 +40,18 @@ public class BackendTest {
         String jasminCode = SpecsIo.getResource("fixtures/public/jasmin/HelloWorld.j");
         var output = TestUtils.runJasmin(jasminCode);
         assertEquals("Hello World!\nHello World Again!\n", SpecsStrings.normalizeFileContents(output));
+
+        ArrayList<int[]> list0 = new ArrayList<>(1);
+
+        ArrayList<Boolean> list1 = new ArrayList<>(2);
+        list1.add(true);
+        list1.add(false);
+        list1.add(false);
+
+        int[] list = new int[3];
+        list[0] = 1;
+        list[1] = 1;
+        list[2] = 1;
+
     }
 }

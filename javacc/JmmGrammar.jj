@@ -1,39 +1,295 @@
 PARSER_PACKAGE=pt.up.fe.comp;
 PARSER_CLASS=JmmGrammarParser;
 SMART_NODE_CREATION=false;
+TOKENS_ARE_NODES=false;
+
+/*
+    Notes on AST annotation:
+    - Name of a variable
+    - Value of an integer or boolean
+    - Is the declared variable an array?
+    - If the class extends another class and which
+
+*/
+
 
 SKIP : " " | "\t" | "\r" | "\n";
 
 TOKEN :
+
+    // Keywords
+    < CLASS : "class" > |
+    < PUBLIC : "public" > |
+    < STATIC : "static" > |
+    < IMPORT : "import" > |
+    < MAIN : "main" > |
+    < VOID : "void" > |
+    < EXTENDS : "extends" > |
+    < LENGTH : "length"> |
+    < NEW : "new" > |
+    < THIS : "this" > |
+    < RETURN : "return" > |
+
+
+    // Operations
 	< PLUS : "+" > |
 	< MINUS : "-" > |
 	< TIMES : "*" > |
 	< DIVIDE : "/" > |
+	< ASSIGN : "=" > |
+	< LESS_THAN : "<" > |
+	< LOGIC_AND : "&&" > |
 	< OPEN_PAREN : "(" > |
+    < BANG : "!" > |
+
+	// Literals and Factors
+    < TRUE : "true" > |
+    < FALSE: "false" > |
+
+	// Delimiters
 	< CLOSE_PAREN : ")" > |
-	< INTEGER : (["0" - "9"])+ >
+	< OPEN_SQUARE_BRACES : "[" > |
+	< CLOSE_SQUARE_BRACES : "]" > |
+	< OPEN_CURLY_BRACES : "{" > |
+	< CLOSE_CURLY_BRACES : "}" > |
+	< SEMICOLON : ";" > |
+    < INLINE_COMMENT: "//" > |
+    < COMMA : ","> |
+    < DOT : "." > |
+    // < LINE_COMMENT: "/*" > (!"*/" .)* "*/" >;
+
+	// Logic and Control
+	< IF : "if" > |
+	< ELSE : "else" > |
+	< WHILE : "while" > |
+
+
+    // Types
+    < BOOLEAN : "boolean" >  |
+    < STRING : "String" > |
+    < INT : "int" > |
+
+    // Regex
+    < IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > |
+    < INTEGER_LITERAL : (["0" - "9"])+ >
 ;
 
-Start : AdditiveExpression <EOF> ;
+// TODO: Correct this implementation
+//SPECIAL_TOKEN: 
+//	<INLINE_COMMENT> (~["\n","\r"])* ("\n"|"\r"|"\r\n") 
+//; 
 
-AdditiveExpression :
-	MultiplicativeExpression
-	(
-		(< PLUS > | < MINUS >)
-		MultiplicativeExpression
-	)?
+
+Start #Init : ImportDeclaration ClassDeclaration <EOF> ;
+
+ImportDeclaration #void:
+    (
+        (((< IMPORT > < IDENTIFIER > {jjtThis.put("package", lastConsumedToken.getImage());}))
+        (ChainedImportDeclaration)? ) #Import <SEMICOLON>
+    )* ;
+
+ChainedImportDeclaration #void:
+    (((<DOT> <IDENTIFIER> {jjtThis.put("subpackage", lastConsumedToken.getImage());}))  (ChainedImportDeclaration)?) #ChainedImport
 ;
 
-MultiplicativeExpression :
-	Factor
-	(
-		(< TIMES > | < DIVIDE >)
-		Factor
-	)?
+
+ClassDeclaration #ClassDecl:
+    <CLASS> <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} ((<EXTENDS> <IDENTIFIER> {jjtThis.put("extended_class", lastConsumedToken.getImage());}) #ClassInheritance)?
+    <OPEN_CURLY_BRACES>
+        (VarDeclaration)*  (MethodDeclaration)*
+    <CLOSE_CURLY_BRACES> ;
+
+//DOUBT: How to handle int [] a as the same node
+VarDeclaration #VarDecl: Type <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} <SEMICOLON> ;
+Type:
+    SCAN 2
+    (
+        (<STRING> {jjtThis.put("type","string");}) | (<BOOLEAN> {jjtThis.put("type","bool");}) | (<IDENTIFIER>  {jjtThis.put("type", lastConsumedToken.getImage());})
+        |
+            <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> {jjtThis.put("is_array", "True");} )? {jjtThis.put("type","int");}
+        // Usar get or default no mapa, sendo o default a false
+    ) ;
+
+// MethodDeclaration
+
+MethodDeclaration : <PUBLIC> NewMethodDeclaration ;
+
+NewMethodDeclaration :
+    (
+    <STATIC> <VOID> <MAIN> {jjtThis.put("name", "main");}
+    <OPEN_PAREN> <STRING> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>
+    <IDENTIFIER> {jjtThis.put("arg_array", lastConsumedToken.getImage());} <CLOSE_PAREN>
+    <OPEN_CURLY_BRACES> MethodBodyDeclaration <CLOSE_CURLY_BRACES> #Main
+    )
+    |
+    (
+    Type {jjtThis.put("return_type", lastConsumedToken.getImage());}
+    <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}
+    <OPEN_PAREN> (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)? < CLOSE_PAREN >
+    < OPEN_CURLY_BRACES > MethodBodyDeclaration ReturnStatement < CLOSE_CURLY_BRACES > #MethodDecl
+    );
+
+ReturnStatement:
+    < RETURN > AndExpression < SEMICOLON > ;
+
+// DOUBT: Can this be void?
+MethodBodyDeclaration #MethodBody: (VarDeclaration)* (Statement)* ;
+
+ParameterDeclaration #void:
+    (Type <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}) #Param;
+
+
+
+// Logic and Control
+
+
+//DOUBT: How do we turn the statement void?
+//DOUBT: Same thing as int [] a, is there a way of a[10] = 3, a[10] being a full node instead of
+//DOUBT: (#Variable #Value) #Assign ? Expression and AndExpression is #Assign are visited? Or do we need to store something?
+Statement #void: (
+    BlockStatement
+    | WhileStatement
+    | IfStatement
+    | SCAN 2 ((<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} (<OPEN_SQUARE_BRACES> Expression #ArrayAccess <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression) #Assign <SEMICOLON>)
+    | AndExpression <SEMICOLON>
+    )
 ;
 
-Factor :
-	< INTEGER > |
-	< MINUS> Factor |
-	< OPEN_PAREN > AdditiveExpression < CLOSE_PAREN >
-;
+
+BlockStatement:
+    <OPEN_CURLY_BRACES> (Statement)* <CLOSE_CURLY_BRACES>;
+
+
+// DOUBT: Should this be void or a more general IfStatement?
+// DOUBT: Do we need separate ifcondition, ifstatement and elsestatement?
+IfStatement #void:
+    ((<IF>
+    <OPEN_PAREN>
+        AndExpression
+    <CLOSE_PAREN>
+        (Statement) #IfStatement) #If)
+    ((<ELSE>
+        Statement)? #Else)  ;
+
+//DOUBT: is this void or do we need some general block for the while, to collect condition and statement
+WhileStatement #void:
+    <WHILE> <OPEN_PAREN>
+        AndExpression #WhileCondition
+    <CLOSE_PAREN>
+        Statement #WhileStatement;
+
+
+
+// Operators
+
+AndExpression #void :
+    LessThanExpression
+    ( (<LOGIC_AND> LessThanExpression { jjtThis.put("op", "and"); }) #BinOp(2)) *;
+
+LessThanExpression #void:
+    (
+       AdditiveExpression
+    )
+    ( (<LESS_THAN> AdditiveExpression { jjtThis.put("op", "lt"); }) #BinOp(2) )* ;
+
+
+
+AdditiveExpression #void:
+    MultiplicationExpression
+    (
+         (<PLUS> MultiplicationExpression { jjtThis.put("op", "add"); }) #BinOp(2)
+        |
+         (<MINUS> MultiplicationExpression { jjtThis.put("op", "sub"); }) #BinOp(2)
+    )* ;
+
+
+MultiplicationExpression #void:
+    ArrayExpression
+        (
+             (<TIMES> ArrayExpression { jjtThis.put("op", "mult"); }) #BinOp(2)
+            |
+             (<DIVIDE> ArrayExpression { jjtThis.put("op", "div"); }) #BinOp(2)
+        )* ;
+
+
+ArrayExpression #void:
+    SCAN 2 NegationExpression (ArrayAccessExpression)? ; //TODO
+
+
+
+
+//DOUBT: Should we store more info ? Do we need the #Arg node?
+ArgumentsExpression #void: (AndExpression #Arg) (<COMMA> AndExpression #Arg)* ;
+
+
+//DOUBT: How to best handle the !, can we generate a Negation node? Or op =?
+//DOUBT: If we choose "op" do we need to place to also alert non existence of !?
+NegationExpression #void:
+    (<BANG> NegationExpression) #Negation
+    | ChainedDotExpression;
+
+
+//DOUBT: Do the arguments need to be stored in a node
+MethodCallDeclaration #MethodCall:
+    (<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());})
+    <OPEN_PAREN> (ArgumentsExpression)? <CLOSE_PAREN> ;
+
+// DOUBT: How can we turn the dot link into a right child ?
+ChainedDotExpression #void:
+    Expression (<DOT> (<LENGTH> #Length | MethodCallDeclaration) #DotLinked)* ; //TODO: place the call as right child
+
+
+// DOUBT: Does this need a node?
+ArrayAccessExpression #void:
+    <OPEN_SQUARE_BRACES>
+        AndExpression #ArrayAccess
+    <CLOSE_SQUARE_BRACES> ;
+
+
+
+// Expression
+
+Keyword #void:
+    <TRUE> #True
+    | <FALSE> #False
+    | <THIS> #This;
+
+
+// DOUBT: How to handle the third case
+Expression #void:
+    (<INTEGER_LITERAL> { jjtThis.put("value", lastConsumedToken.getImage()); }) #IntegerLiteral
+    | Keyword
+    | <NEW> (((<INT> ArrayAccessExpression #ArrayCreation) | (<IDENTIFIER> { jjtThis.put("name", lastConsumedToken.getImage()); } <OPEN_PAREN> <CLOSE_PAREN>) #ClassCreation)) //TODO
+    | ( <IDENTIFIER> { jjtThis.put("name", lastConsumedToken.getImage()); }) #ID //DOUBT: value or name?
+    | MethodCallDeclaration
+    | <OPEN_PAREN> AndExpression <CLOSE_PAREN>;
+
+
+
+// Injections for the implementation of JmmNode
+// Since this is injected into BaseNode, it affects only non-terminals
+INJECT BaseNode :
+		import pt.up.fe.comp.jmm.ast.JmmNode;
+		import pt.up.fe.comp.jmm.ast.AJmmNode;
+		import pt.up.fe.specs.util.SpecsCollections;
+		extends AJmmNode
+{
+    @Override
+    public List<JmmNode> getChildren() {
+
+        return SpecsCollections.cast(children(), JmmNode.class);
+    }
+
+    @Override
+    public void add(JmmNode child, int index) {
+
+        if (child instanceof Node) {
+
+            addChild(index, (Node) child);
+        } else {
+
+            throw new RuntimeException("Node " + child + " is not a Node.");
+        }
+
+    }
+}
