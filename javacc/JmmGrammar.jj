@@ -114,7 +114,7 @@ Type:
 
 MethodDeclaration : <PUBLIC> NewMethodDeclaration ;
 
-NewMethodDeclaration :
+NewMethodDeclaration #void:
     (
     <STATIC> <VOID> <MAIN> {jjtThis.put("name", "main");}
     <OPEN_PAREN> <STRING> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>
@@ -236,7 +236,7 @@ MethodCallDeclaration #MethodCall:
 
 // DOUBT: How can we turn the dot link into a right child ?
 ChainedDotExpression #void:
-    Expression (<DOT> (<LENGTH> #Length | MethodCallDeclaration) #DotLinked)* ; //TODO: place the call as right child
+    Expression (<DOT> (<LENGTH> #Length | MethodCallDeclaration) #DotLinked(2))* ; //TODO: place the call as right child
 
 
 // DOUBT: Does this need a node?
