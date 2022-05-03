@@ -1,4 +1,4 @@
-package pt.up.fe.comp;
+package pt.up.fe.comp.analysis;
 
 import java.util.Collections;
 import pt.up.fe.comp.jmm.analysis.JmmAnalysis;
