@@ -94,7 +94,7 @@ ChainedImportDeclaration #void:
 
 
 ClassDeclaration #ClassDecl:
-    <CLASS> <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} ((<EXTENDS> <IDENTIFIER> {jjtThis.put("extended_class", lastConsumedToken.getImage());}) #ClassInheritance)?
+    <CLASS> <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} ((<EXTENDS> <IDENTIFIER> {jjtThis.put("extended_class", lastConsumedToken.getImage());}))?
     <OPEN_CURLY_BRACES>
         (VarDeclaration)*  (MethodDeclaration)*
     <CLOSE_CURLY_BRACES> ;
