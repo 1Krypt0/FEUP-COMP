@@ -9,5 +9,8 @@ public class AnalysisTest {
     public void test() {
         JmmSemanticsResult result = TestUtils.analyse(SpecsIo.getResource("fixtures/public/HelloWorld.jmm"));
         System.out.println("Symbol Table: " + result.getSymbolTable().print());
+
+        TestUtils.noErrors(result);
+
     }
 }
