@@ -24,15 +24,11 @@ public class ImportVisitor extends AJmmVisitor<JmmNode, String> {
     public boolean visit(JmmNode node, ProgramSymbolTable symbolTable) {
         JmmNode startNode = node;
 
-        System.out.println("IMPORT VISITOR" + startNode.getChildren().isEmpty());
-
         imports.add(startNode.get("package"));
 
         while (!startNode.getChildren().isEmpty()) {
-            System.out.println("Added import " + startNode.get("package"));
-
-            imports.add(startNode.get("package"));
             startNode = startNode.getChildren().get(0);
+            imports.add(startNode.get("package"));
         }
 
         symbolTable.addImport(getImports());
