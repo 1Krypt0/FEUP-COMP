@@ -3,6 +3,7 @@ package pt.up.fe.comp;
 import java.util.Collections;
 import java.util.Map;
 
+import pt.up.fe.comp.analysis.LineColVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.parser.JmmParser;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
@@ -36,22 +37,22 @@ public class SimpleParser implements JmmParser {
             JmmGrammarParser parser = new JmmGrammarParser(SpecsIo.toInputStream(jmmCode));
             SpecsSystem.invoke(parser, startingRule);
 
-            // Node root = parser.rootNode();
 
-            var root = ((JmmNode) parser.rootNode()).sanitize();
+            Node root = parser.rootNode();
 
             if (root == null) {
                 throw new ParseException(parser, "Parsing problems, root is null");
             }
 
-            System.out.println(root.toTree());
+            new LineColVisitor().visit( (JmmNode) root); //place line and col info
+            System.out.println(((JmmNode) root).sanitize().toTree());
 
             /*if (!(root instanceof JmmNode)) {
                 return JmmParserResult.newError(new Report(ReportType.WARNING, Stage.SYNTATIC, -1,
                         "JmmNode interface not yet implemented, returning null root node"));
             }*/
 
-            return new JmmParserResult(root, Collections.emptyList(), config);
+            return new JmmParserResult(((JmmNode) root).sanitize(), Collections.emptyList(), config);
 
         } catch (Exception ex) {
             var e = TestUtils.getException(ex, ParseException.class);
