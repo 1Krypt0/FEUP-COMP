@@ -8,6 +8,6 @@ public class AnalysisTest {
     @Test
     public void test() {
         JmmSemanticsResult result = TestUtils.analyse(SpecsIo.getResource("fixtures/public/HelloWorld.jmm"));
-        System.out.println("Symbol Table: " + result.getSymbolTable());
+        System.out.println("Symbol Table: " + result.getSymbolTable().print());
     }
 }
