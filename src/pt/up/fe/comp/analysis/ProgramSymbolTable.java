@@ -78,4 +78,15 @@ public class ProgramSymbolTable implements SymbolTable {
     public void setSuperClass(String superClass) {
         this.superClass = superClass;
     }
+
+    public void addMethod(String methodSignature, Type returnType, List<Symbol> parameters) {
+        this.methods.add(methodSignature);
+        this.methodReturnTypes.put(methodSignature, returnType);
+        this.methodParameters.put(methodSignature, parameters);
+    }
+
+    public boolean hasMethod(String methodSignature) {
+        return this.methods.contains(methodSignature);
+    }
+
 }
