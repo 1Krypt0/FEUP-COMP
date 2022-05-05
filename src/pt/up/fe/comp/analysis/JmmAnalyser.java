@@ -11,7 +11,10 @@ public class JmmAnalyser implements JmmAnalysis {
     @Override
 
     public JmmSemanticsResult semanticAnalysis(JmmParserResult parserResult) {
-        SymbolTable symbolTable = null;
+        ProgramSymbolTable symbolTable = new ProgramSymbolTable();
+        var symbolTableFiller = new SymbolTableFiller();
+        symbolTableFiller.visit(parserResult.getRootNode(), symbolTable);
+
         return new JmmSemanticsResult(parserResult, symbolTable, Collections.emptyList());
     }
 }

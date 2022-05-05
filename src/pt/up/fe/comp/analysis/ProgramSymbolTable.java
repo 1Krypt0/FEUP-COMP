@@ -65,4 +65,9 @@ public class ProgramSymbolTable implements SymbolTable {
     public List<Symbol> getLocalVariables(String methodSignature) {
         return Collections.emptyList();
     }
+
+
+    public void addImport(String importName) {
+        this.imports.add(importName);
+    }
 }
