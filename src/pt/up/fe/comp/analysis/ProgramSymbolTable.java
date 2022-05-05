@@ -70,4 +70,12 @@ public class ProgramSymbolTable implements SymbolTable {
     public void addImport(String importName) {
         this.imports.add(importName);
     }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public void setSuperClass(String superClass) {
+        this.superClass = superClass;
+    }
 }

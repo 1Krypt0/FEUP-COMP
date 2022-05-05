@@ -10,6 +10,7 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
 
     public SymbolTableFiller() {
         addVisit(AstNode.Import, this::visitImportDecl);
+        addVisit(AstNode.Class_Decl, this::classDeclVisit);
         // addVisit(AstNode.Chained_Import, this::visitImportDecl);
     }
 
@@ -21,4 +22,15 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
 
         return 0;
     }
+
+    private Integer classDeclVisit(JmmNode classDecl, ProgramSymbolTable symbolTable) {
+        System.out.println("Visiting class decl");
+
+        symbolTable.setClassName(classDecl.get("name"));
+
+        classDecl.getOptional("extended_class").ifPresent(symbolTable::setSuperClass);
+
+        return 0;
+    }
+
 }

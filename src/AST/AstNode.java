@@ -7,7 +7,8 @@ public enum AstNode {
     PROGRAM,
     Import,
     Chained_Import,
-    ID;
+    ID,
+    Class_Decl;
 
     private final String name;
 
