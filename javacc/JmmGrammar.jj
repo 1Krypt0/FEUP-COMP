@@ -89,7 +89,7 @@ ImportDeclaration #void:
     )* ;
 
 ChainedImportDeclaration #void:
-    (((<DOT> <IDENTIFIER> {jjtThis.put("subpackage", lastConsumedToken.getImage());}))  (ChainedImportDeclaration)?) #ChainedImport
+    (((<DOT> <IDENTIFIER> {jjtThis.put("package", lastConsumedToken.getImage());}))  (ChainedImportDeclaration)?) #ChainedImport
 ;
 
 
