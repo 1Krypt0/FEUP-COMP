@@ -1,7 +1,10 @@
 package pt.up.fe.comp.analysis;
 
 import AST.AstNode;
+import AST.AstUtils;
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
@@ -12,6 +15,9 @@ import pt.up.fe.comp.jmm.report.Stage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static AST.AstUtils.builParamTypeObject;
 
 public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, Integer> {
 
@@ -27,6 +33,8 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
         addVisit(AstNode.Import, this::visitImportDecl);
         addVisit(AstNode.Class_Decl, this::classDeclVisit);
         addVisit(AstNode.Method_Declaration, this::methodDeclVisit);
+        addVisit(AstNode.Main, this::methodDeclVisit);
+
         // addVisit(AstNode.Chained_Import, this::visitImportDecl);
     }
 
@@ -52,9 +60,8 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
     private Integer methodDeclVisit(JmmNode methodDecl, ProgramSymbolTable symbolTable) {
         System.out.println("Visiting method decl");
 
-        // Can be NewMethodDecl or Main
-        JmmNode methodDeclaration = methodDecl.getJmmChild(0);
-        String methodName = methodDeclaration.get("name");
+        // NewMethodDecl
+        String methodName = methodDecl.get("name");
 
         if(symbolTable.hasMethod(methodName)) {
             this.reports.add(new Report(ReportType.ERROR,Stage.SEMANTIC, Integer.parseInt(methodDecl.get("line")),
@@ -62,10 +69,28 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
             return -1;
         }
 
-        symbolTable.addMethod(methodName, null , Collections.emptyList());
+        // TODO: DOUBT check if String[] is a valid type
+        // TODO: DOUBT should we change the type to have the name of variable?
 
-        // return type
-        // parameters
+        JmmNode returnType = methodDecl.getJmmChild(0);
+
+        if(methodDecl.getKind().equals("Main")) {
+            Symbol main = new Symbol(new Type("String", true), methodDecl.get("arg_array"));
+            //new list with main
+            List<Symbol> main_list = new ArrayList<>();
+            main_list.add(main);
+
+            symbolTable.addMethod(methodName, new Type("void", false) , main_list);
+        }
+        else{
+            boolean isArray = returnType.getOptional("is_array").map(Boolean::parseBoolean).orElse(false);
+            String type = returnType.get("type");
+            List<JmmNode> params = methodDecl.getChildren().subList(1, methodDecl.getChildren().size())
+                    .stream().filter(node -> node.getKind().equals("Param")).collect(Collectors.toList());
+
+            List<Symbol> parameters =  params.stream().map(AstUtils::builParamTypeObject).collect(Collectors.toList());
+            symbolTable.addMethod(methodName, new Type(type, isArray) , parameters);
+        }
 
         return 0;
     }
