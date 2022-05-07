@@ -9,7 +9,8 @@ public enum AstNode {
     Chained_Import,
     ID,
     Class_Decl,
-    Method_Declaration;
+    Method_Declaration,
+    Main;
 
     private final String name;
 

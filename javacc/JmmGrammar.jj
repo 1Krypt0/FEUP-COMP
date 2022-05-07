@@ -112,22 +112,22 @@ Type:
 
 // MethodDeclaration
 
-MethodDeclaration : <PUBLIC> NewMethodDeclaration ;
+MethodDeclaration #void : <PUBLIC> NewMethodDeclaration ;
 
 NewMethodDeclaration #void:
-    (
-    <STATIC> <VOID> <MAIN> {jjtThis.put("name", "main");}
+    ((
+    <STATIC> <VOID> <MAIN> {jjtThis.put("name", "main");} {jjtThis.put("return_type", "void");}
     <OPEN_PAREN> <STRING> <OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES>
     <IDENTIFIER> {jjtThis.put("arg_array", lastConsumedToken.getImage());} <CLOSE_PAREN>
     <OPEN_CURLY_BRACES> MethodBodyDeclaration <CLOSE_CURLY_BRACES>
-    ) #Main
+    ) #Main )
     |
-    (
-    Type {jjtThis.put("return_type", lastConsumedToken.getImage());}
+    ((
+    Type
     <IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());}
     <OPEN_PAREN> (ParameterDeclaration ( < COMMA > ParameterDeclaration)*)? < CLOSE_PAREN >
     < OPEN_CURLY_BRACES > MethodBodyDeclaration ReturnStatement < CLOSE_CURLY_BRACES >
-    ) #MethodDecl;
+    ) #MethodDeclaration ) ;
 
 ReturnStatement:
     < RETURN > AndExpression < SEMICOLON > ;
