@@ -15,7 +15,7 @@ public class ProgramSymbolTable implements SymbolTable {
     private final List<String> methods;
     private final Map<String, Type> methodReturnTypes;
     private final Map<String, List<Symbol>> methodParameters;
-
+    private final List<Symbol> fields;
 
     public ProgramSymbolTable() {
         this.imports = new ArrayList<>();
@@ -24,6 +24,7 @@ public class ProgramSymbolTable implements SymbolTable {
         this.methods = new ArrayList<>();
         this.methodReturnTypes = new HashMap<>();
         this.methodParameters = new HashMap<>();
+        this.fields = new ArrayList<>();
     }
 
     @Override
@@ -43,7 +44,7 @@ public class ProgramSymbolTable implements SymbolTable {
 
     @Override
     public List<Symbol> getFields() {
-        return Collections.emptyList();
+        return fields;
     }
 
     @Override
@@ -87,6 +88,14 @@ public class ProgramSymbolTable implements SymbolTable {
 
     public boolean hasMethod(String methodSignature) {
         return this.methods.contains(methodSignature);
+    }
+
+    public void addField(Symbol field) {
+        this.fields.add(field);
+    }
+
+    public boolean hasField(String fieldName) {
+        return this.fields.stream().anyMatch(f -> f.getName().equals(fieldName));
     }
 
 }

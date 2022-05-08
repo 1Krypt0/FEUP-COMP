@@ -3,9 +3,7 @@ package pt.up.fe.comp.analysis;
 import AST.AstNode;
 import AST.AstUtils;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
-import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
 import pt.up.fe.comp.jmm.report.Report;
@@ -13,11 +11,8 @@ import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static AST.AstUtils.builParamTypeObject;
 
 public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, Integer> {
 
@@ -34,9 +29,11 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
         addVisit(AstNode.Class_Decl, this::classDeclVisit);
         addVisit(AstNode.Method_Declaration, this::methodDeclVisit);
         addVisit(AstNode.Main, this::methodDeclVisit);
+        // addVisit(AstNode.Var_Decl, this::varDeclVisit);
 
         // addVisit(AstNode.Chained_Import, this::visitImportDecl);
     }
+
 
     private Integer visitImportDecl(JmmNode importDecl, ProgramSymbolTable symbolTable) {
         System.out.println("Visiting import decl");
@@ -53,6 +50,15 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
         symbolTable.setClassName(classDecl.get("name"));
 
         classDecl.getOptional("extended_class").ifPresent(symbolTable::setSuperClass);
+
+        // TODO: DOUBT is this correct can we visit the fields here or difernciate in the grammar itself ?
+        List<JmmNode> varDeclarations = classDecl.getChildren().subList(0, classDecl.getChildren().size())
+                    .stream().filter(node -> node.getKind().equals("VarDecl")).collect(Collectors.toList());
+
+        if (varDeclarations.size() > 0) {
+            List<Symbol> fields = AstUtils.parseFields(varDeclarations);
+            fields.forEach(symbolTable::addField);
+        }
 
         return 0;
     }
@@ -85,7 +91,7 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
         else{
             boolean isArray = returnType.getOptional("is_array").map(Boolean::parseBoolean).orElse(false);
             String type = returnType.get("type");
-            List<JmmNode> params = methodDecl.getChildren().subList(1, methodDecl.getChildren().size())
+            List<JmmNode> params = methodDecl.getChildren().subList(0, methodDecl.getChildren().size())
                     .stream().filter(node -> node.getKind().equals("Param")).collect(Collectors.toList());
 
             List<Symbol> parameters =  params.stream().map(AstUtils::builParamTypeObject).collect(Collectors.toList());
@@ -94,5 +100,6 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
 
         return 0;
     }
+
 
 }
