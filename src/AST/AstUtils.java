@@ -29,6 +29,11 @@ public class AstUtils {
         return fields.stream().map(AstUtils::parseField).collect(Collectors.toList());
     }
 
+    public static List<Symbol> parseLocalVariables(List<JmmNode> localVariables) {
+        return localVariables.stream().map(AstUtils::parseField).collect(Collectors.toList());
+    }
+
+
     public static Symbol parseField(JmmNode field) {
         SpecsCheck.checkArgument(field.getKind().equals("VarDecl"), () -> "Expected Field node, got " + field.getKind());
 
