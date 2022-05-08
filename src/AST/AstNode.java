@@ -10,7 +10,7 @@ public enum AstNode {
     ID,
     Class_Decl,
     Method_Declaration,
-    Main, Var_Decl;
+    Main, Var_Decl, Method_Body;
 
     private final String name;
 

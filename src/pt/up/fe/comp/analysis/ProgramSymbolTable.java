@@ -16,6 +16,7 @@ public class ProgramSymbolTable implements SymbolTable {
     private final Map<String, Type> methodReturnTypes;
     private final Map<String, List<Symbol>> methodParameters;
     private final List<Symbol> fields;
+    private final Map<String, List<Symbol>> localVariables;
 
     public ProgramSymbolTable() {
         this.imports = new ArrayList<>();
@@ -25,6 +26,7 @@ public class ProgramSymbolTable implements SymbolTable {
         this.methodReturnTypes = new HashMap<>();
         this.methodParameters = new HashMap<>();
         this.fields = new ArrayList<>();
+        this.localVariables = new HashMap<>();
     }
 
     @Override
@@ -64,7 +66,7 @@ public class ProgramSymbolTable implements SymbolTable {
 
     @Override
     public List<Symbol> getLocalVariables(String methodSignature) {
-        return Collections.emptyList();
+        return this.localVariables.get(methodSignature);
     }
 
 
@@ -96,6 +98,23 @@ public class ProgramSymbolTable implements SymbolTable {
 
     public boolean hasField(String fieldName) {
         return this.fields.stream().anyMatch(f -> f.getName().equals(fieldName));
+    }
+
+    public void addLocalVariable(String methodSignature, Symbol localVariable) {
+        if (!this.localVariables.containsKey(methodSignature)) {
+            this.localVariables.put(methodSignature, new ArrayList<>());
+        }
+        this.localVariables.get(methodSignature).add(localVariable);
+    }
+    public boolean hasLocalVariable(String methodSignature, String localVariableName) {
+        return this.localVariables.get(methodSignature).stream().anyMatch(f -> f.getName().equals(localVariableName));
+    }
+
+    public void addLocalVariables(String methodSignature, List<Symbol> localVariables) {
+        if (!this.localVariables.containsKey(methodSignature)) {
+            this.localVariables.put(methodSignature, new ArrayList<>());
+        }
+        this.localVariables.get(methodSignature).addAll(localVariables);
     }
 
 }

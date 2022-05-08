@@ -29,9 +29,26 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
         addVisit(AstNode.Class_Decl, this::classDeclVisit);
         addVisit(AstNode.Method_Declaration, this::methodDeclVisit);
         addVisit(AstNode.Main, this::methodDeclVisit);
+        addVisit(AstNode.Method_Body, this::methodBodyVisit);
         // addVisit(AstNode.Var_Decl, this::varDeclVisit);
 
         // addVisit(AstNode.Chained_Import, this::visitImportDecl);
+    }
+
+    private Integer methodBodyVisit(JmmNode methodBody , ProgramSymbolTable programSymbolTable) {
+        System.out.println("Visiting method body");
+
+        // get varDecl nodes from methodBody
+        List<JmmNode> varDeclarationsNodes = methodBody.getChildren().subList(0, methodBody.getChildren().size())
+                .stream().filter(node -> node.getKind().equals("VarDecl")).collect(Collectors.toList());
+
+        List<Symbol> localVariables = AstUtils.parseLocalVariables(varDeclarationsNodes);
+        String methodName = methodBody.getJmmParent().get("name");
+
+        // add fields to symbol table
+        programSymbolTable.addLocalVariables(methodName, localVariables);
+
+        return 0;
     }
 
 
@@ -51,7 +68,7 @@ public class SymbolTableFiller extends PreorderJmmVisitor<ProgramSymbolTable, In
 
         classDecl.getOptional("extended_class").ifPresent(symbolTable::setSuperClass);
 
-        // TODO: DOUBT is this correct can we visit the fields here or difernciate in the grammar itself ?
+        // TODO: DOUBT is this correct can we visit the fields here or differentiate in the grammar itself ?
         List<JmmNode> varDeclarations = classDecl.getChildren().subList(0, classDecl.getChildren().size())
                     .stream().filter(node -> node.getKind().equals("VarDecl")).collect(Collectors.toList());
 
