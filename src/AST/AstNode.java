@@ -10,12 +10,21 @@ public enum AstNode {
     ID,
     Class_Decl,
     Method_Declaration,
-    Main, Var_Decl, Method_Body;
+    If,
+    Main,
+    Var_Decl,
+    Method_Body,
+    While_Condition,
+    True,
+    False,
+    Bin_Op,
+    Negation,
+    Integer_Literal;
 
     private final String name;
 
     AstNode() {
-        this.name = SpecsStrings.toCamelCase(name(),"_", true);
+        this.name = SpecsStrings.toCamelCase(name(), "_", true);
     }
 
     @Override
