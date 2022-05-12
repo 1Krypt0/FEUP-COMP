@@ -23,7 +23,7 @@ public class JmmAnalyser implements JmmAnalysis {
         symbolTableFiller.visit(parserResult.getRootNode(), symbolTable);
         reports.addAll(symbolTableFiller.getReports());
 
-        BooleanConditionAnalyser analyser = new BooleanConditionAnalyser();
+        BooleanConditionAnalyser analyser = new BooleanConditionAnalyser(symbolTable);
         analyser.visit(parserResult.getRootNode(), reports);
         System.out.println("REPORTS: " + reports);
 
