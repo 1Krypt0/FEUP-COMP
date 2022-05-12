@@ -62,6 +62,9 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
 
         codeString.append(" {\n");
 
+        codeString.append(OllirUtils.createLocalFields(symbolTable));
+
+
         codeString.append(OllirUtils.createConstructor(symbolTable)).append("\n");
 
         for (JmmNode node : classDecl.getChildren()) {

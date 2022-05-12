@@ -30,6 +30,9 @@ public class OllirUtils {
         if(jmmType.equals("void")) {
             return "V";
         }
+        else if (jmmType.equals("int")) {
+            return "i32";
+        }
 
         return jmmType;
     }
@@ -42,4 +45,16 @@ public class OllirUtils {
                 "invokespecial(this, \"<init>\").V;\n" +
                 "}";
     }
+
+    public static String createLocalFields(SymbolTable symbolTable) {
+        StringBuilder fields = new StringBuilder();
+
+        for(Symbol symbol : symbolTable.getFields()) {
+            fields.append(".field ").append(getCode(symbol)).append(";\n");
+        }
+
+        return fields.toString();
+    }
+
+
 }
