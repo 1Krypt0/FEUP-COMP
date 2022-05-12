@@ -7,7 +7,7 @@ public enum AstNode {
     PROGRAM,
     Import,
     Chained_Import,
-    ID,
+    I_D,
     Class_Decl,
     Method_Declaration,
     If,
@@ -19,7 +19,8 @@ public enum AstNode {
     False,
     Bin_Op,
     Negation,
-    Integer_Literal;
+    Integer_Literal,
+    Array_Access, Return_Statement, Assign, Dot_Linked;
 
     private final String name;
 
