@@ -60,13 +60,13 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
             codeString.append(" extends ").append(superClass);
         }
 
-
         codeString.append(" {\n");
+
+        codeString.append(OllirUtils.createConstructor(symbolTable)).append("\n");
 
         for (JmmNode node : classDecl.getChildren()) {
             visit(node);
         }
-
 
         codeString.append("}");
         return 0;

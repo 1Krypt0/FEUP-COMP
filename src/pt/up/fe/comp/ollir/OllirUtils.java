@@ -2,6 +2,7 @@ package pt.up.fe.comp.ollir;
 
 
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
+import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 
 import java.util.Objects;
@@ -31,5 +32,14 @@ public class OllirUtils {
         }
 
         return jmmType;
+    }
+
+    public static String createConstructor(SymbolTable symbolTable) {
+
+        return ".construct " +
+                symbolTable.getClassName() +
+                "().V {\n" +
+                "invokespecial(this, \"<init>\").V;\n" +
+                "}";
     }
 }
