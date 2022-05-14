@@ -149,6 +149,29 @@ public class ProgramSymbolTable implements SymbolTable {
                 }
             }
         }
+        // get type from arguments
+        for (String methodName : this.methods) {
+            for (Symbol parameter : this.methodParameters.get(methodName)) {
+                if (parameter.getName().equals(variableName)) {
+                    return parameter.getType();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public Integer getArgumentPosition(String methodName, String argumentName) {
+
+        var a  = this.methodParameters;
+
+        List<Symbol> parameters = this.methodParameters.get(methodName);
+
+        for (int i = 0; i < this.methodParameters.get(methodName).size(); i++) {
+            if (this.methodParameters.get(methodName).get(i).getName().equals(argumentName)) {
+                return i;
+            }
+        }
         return null;
     }
 
@@ -156,4 +179,12 @@ public class ProgramSymbolTable implements SymbolTable {
         return this.className;
     }
 
+    public Type getArgumentType(String methodName, String name) {
+        for (Symbol argument : this.methodParameters.get(methodName)) {
+            if (argument.getName().equals(name)) {
+                return argument.getType();
+            }
+        }
+        return null;
+    }
 }

@@ -117,7 +117,7 @@ public class OllirUtils {
         return node.get("value") + ".i32";
     }
 
-    public static String getIdCode(JmmNode idNode, ProgramSymbolTable symbolTable) {
-        return idNode.get("name") + "." +  getCode(symbolTable.getVariableType(idNode.get("name")));
+    public static String getIdCode(String idName, ProgramSymbolTable symbolTable) {
+        return idName + "." +  getCode(symbolTable.getVariableType(idName));
     }
 }
