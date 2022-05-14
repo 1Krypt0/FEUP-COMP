@@ -1,14 +1,11 @@
 package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
-import pt.up.fe.comp.BinOp;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-import pt.up.fe.comp.jmm.ast.PostorderJmmVisitor;
 
 import java.util.Stack;
 
@@ -16,8 +13,6 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
     private final SymbolTable symbolTable;
     private final StringBuilder code;
-
-    private Stack<String> temporaryVariablesStack;
     private String methodName;
 
 
@@ -38,18 +33,18 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         addVisit(AstNode.Method_Body, this::visitMethodBody);
         addVisit(AstNode.Assign, this::visitAssign);
 
+        // addVisit(AstNode.Return, this::visitReturn);
+        // addVisit(AstNode.Array_Access, this::visitArrayAccess);
+
         /*
         addVisit(AstNode.If, this::visitIf);
         addVisit(AstNode.While, this::visitWhile);
         addVisit(AstNode.Method_Call, this::visitMethodCall);
-        addVisit(AstNode.Return, this::visitReturn);
-        addVisit(AstNode.Array_Access, this::visitArrayAccess);
         */
 
         setDefaultVisit(this::visitDefault);
 
     }
-
 
 
     private String visitMethodBody(JmmNode jmmNode, Object integer) {
@@ -92,26 +87,42 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitAssign(JmmNode assignNode, Object integer) {
         System.out.println("Visiting assign");
 
-        // TODO: DO FIRST
+        // TODO: we need to check if the variable is in the same method or is a field
+
+        // a could be an array access
+        // a field (getFields method)
+        // a dot expression??
 
         // a =
-        // AndExpression / BinOP -> Another visitor
+        // AndExpression / BinOP -> Another visitor check
         // methodCall
         // arrayAccess
+        // ArrayCreation
+        // new Object ??
 
         // TODO: Could be an array access
         // TODO: Could be a this dot expression
-        // TODO: Could be a literal
+        // TODO: Could be a literal bool or int
+
 
         String variableName = assignNode.get("name");
         Symbol variableSymbol = ((ProgramSymbolTable) symbolTable).getLocalVariable(this.methodName, variableName);
         String variableCode = OllirUtils.getCode(variableSymbol);
         System.out.println("Variable code: " + variableCode);
         BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable);
-        String instruction = binOpOllirGenerator.visit(assignNode.getJmmChild(0), null);
+
+        JmmNode binOp = assignNode.getJmmChild(0);
+
+        // BinOp takes care of a BinOp, a literal, an ID (unless it's a this.)
+        // Should it handle a method call
+        // Should it handle an array access
+        // Should it handle an array creation
+        String instruction = binOpOllirGenerator.visit(binOp, null);
         System.out.println("Instruction: " + instruction);
         code.append(binOpOllirGenerator.getCode());
-        code.append(variableCode).append(" :=.i32 ").append(instruction).append(";").append("\n");
+        code.append(variableCode).append(" ").
+                append(OllirUtils.getBinOpAssignCode(binOp, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+                    append(" ").append(instruction).append(";").append("\n");
 
         return "";
     }
