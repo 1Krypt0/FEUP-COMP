@@ -2,6 +2,7 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import AST.AstUtils;
+import pt.up.fe.comp.MethodBody;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
@@ -23,7 +24,11 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
         addVisit(AstNode.Class_Decl, this::classDeclVisitor);
         addVisit(AstNode.Method_Declaration, this::methodDeclVisitor);
         addVisit(AstNode.Main, this::methodDeclVisitor);
+        addVisit(AstNode.Method_Body, this::methodBodyVisitor);
+        setDefaultVisit(this::defaultVisit);
     }
+
+
 
     private Integer methodDeclVisitor(JmmNode methodDecl, Integer integer) {
 
@@ -32,9 +37,9 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
         String methodName = methodDecl.get("name");
         codeString.append(".method public ");
         if(methodDecl.getKind().equals("Main")) {
-            codeString.append("static");
+            codeString.append("static ");
         }
-        codeString.append(" ").append(methodName);
+        codeString.append(methodName);
 
 
         List<Symbol> parameters =  symbolTable.getParameters(methodName);
@@ -45,9 +50,26 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
 
 
         codeString.append(" {\n");
-        codeString.append("}");
+
+        for (JmmNode node : methodDecl.getChildren()) {
+            visit(node);
+        }
+
+        codeString.append("}\n");
         return 0;
     }
+
+
+    private Integer methodBodyVisitor(JmmNode methodBody, Integer integer) {
+
+        System.out.println("Visit method body for method " + methodBody.getJmmParent().get("name"));
+
+        MethodBodyOllirGenerator methodBodyVisitor = new MethodBodyOllirGenerator(symbolTable);
+        methodBodyVisitor.visit(methodBody);
+        codeString.append(methodBodyVisitor.getCode());
+        return  0;
+    }
+
 
     private Integer classDeclVisitor(JmmNode classDecl, Integer integer) {
 
@@ -63,7 +85,6 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
         codeString.append(" {\n");
 
         codeString.append(OllirUtils.createLocalFields(symbolTable));
-
 
         codeString.append(OllirUtils.createConstructor(symbolTable)).append("\n");
 
@@ -94,6 +115,12 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
             visit(node);
         }
 
+        return 0;
+    }
+
+
+    private Integer defaultVisit(JmmNode node, Integer dummy) {
+        System.out.println("Unhandled node: " + node.getKind());
         return 0;
     }
 
