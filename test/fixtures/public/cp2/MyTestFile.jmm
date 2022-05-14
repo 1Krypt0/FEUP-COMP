@@ -1,17 +1,13 @@
 import ioPlus;
 class MyTestClass {
-    int a;
-
 
     public static void main(String[] args) {
-
     }
 
-
-    public int testFoo() {
-       int b;
-       b = 1 + 2 + 3 + 4 + 5;
-       return b;
+    public int[] testFoo() {
+       int[] c;
+       c = new int[ 3 + 2 + 1];
+       return c;
     }
 
 
