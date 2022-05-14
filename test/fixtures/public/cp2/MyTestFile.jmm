@@ -1,0 +1,18 @@
+import ioPlus;
+class MyTestClass {
+    int a;
+
+
+    public static void main(String[] args) {
+
+    }
+
+
+    public int testFoo() {
+       int b;
+       b = 1 + 2 + 3 + 4 + 5;
+       return b;
+    }
+
+
+}
