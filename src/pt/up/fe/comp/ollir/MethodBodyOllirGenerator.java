@@ -32,6 +32,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         addVisit(AstNode.Method_Body, this::visitMethodBody);
         addVisit(AstNode.Assign, this::visitAssign);
+        addVisit(AstNode.Array_Creation, this::visitArrayCreation);
 
         // addVisit(AstNode.Return, this::visitReturn);
         // addVisit(AstNode.Array_Access, this::visitArrayAccess);
@@ -39,11 +40,36 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         /*
         addVisit(AstNode.If, this::visitIf);
         addVisit(AstNode.While, this::visitWhile);
-        addVisit(AstNode.Method_Call, this::visitMethodCall);
+        addVisit(AstNode.Method_Call, this::visitMethodCall); // Does this include chained dot expressions
         */
 
         setDefaultVisit(this::visitDefault);
 
+    }
+
+    private String visitArrayCreation(JmmNode arrayCreationNode, Object o) {
+
+        /*
+            int[] c = new int[A.length];
+
+            simplest case is int[] c = new int[2];
+            goes to:
+            c.array.i32 :=.array.i32 new(array, 2.i32).array.i32
+         */
+
+        JmmNode arrayAccessNode = arrayCreationNode.getChildren().get(0); // This is the BinOp that has the length of the array
+        JmmNode arrayAccessOperationNode = arrayAccessNode.getChildren().get(0); // This is the array
+
+        arrayAccessNode =  arrayAccessNode.getChildren().get(0);
+        //TODO: BandAid Should a class separation : right side of Assigment Exprs -> BinOp or other and visit in AssingmentVisitor
+
+        BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable);
+        String arrayLength = binOpOllirGenerator.visit(arrayAccessNode, arrayAccessNode);
+        code.append(binOpOllirGenerator.getCode());
+
+        // if it returned an expression and not
+
+        return "new(array, " + arrayLength + ").array.i32";
     }
 
 
@@ -87,6 +113,13 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitAssign(JmmNode assignNode, Object integer) {
         System.out.println("Visiting assign");
 
+        /*
+        In the compiler you are expected to develop, method invocation from imported classes can only be used in statements with direct assignment (e.g.,a = M.f();, a=m1.g();)
+         or as simple call statements, i.e.,without assignment (e.g., M.f2(); , m1.g();).
+        Calls to methods declared inside the class can only appear in compounded operation (e.g, a = b * this.m(10,20), where "m” is declared inside the class).
+        */
+
+
         // TODO: we need to check if the variable is in the same method or is a field
 
         // a could be an array access
@@ -95,9 +128,10 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         // a =
         // AndExpression / BinOP -> Another visitor check
+        // ArrayCreation check
+        // Class Creation
         // methodCall
         // arrayAccess
-        // ArrayCreation
         // new Object ??
 
         // TODO: Could be an array access
@@ -111,18 +145,41 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         System.out.println("Variable code: " + variableCode);
         BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable);
 
-        JmmNode binOp = assignNode.getJmmChild(0);
+        JmmNode assignedNode = assignNode.getJmmChild(0);
+
+
+        if(assignedNode.getKind().equals("ArrayCreation")) {
+            String instruction = visit(assignedNode, null);
+            code.append(variableCode).append(" ").
+                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+                    append(" ").append(instruction).append(";").append("\n");
+        }
+        else if(assignedNode.getKind().equals("ClassCreation")) {
+            // TODO: What goes here?
+        }
+
 
         // BinOp takes care of a BinOp, a literal, an ID (unless it's a this.)
-        // Should it handle a method call
+        // Should it? It has the necessary visitors for its own operations, but should it take care of Direct access nodes?
+
+
+        // Should it handle a method call YES PLEASE int[] C = new int[A.length <- This is a BINOP? NO];
         // Should it handle an array access
         // Should it handle an array creation
-        String instruction = binOpOllirGenerator.visit(binOp, null);
-        System.out.println("Instruction: " + instruction);
-        code.append(binOpOllirGenerator.getCode());
-        code.append(variableCode).append(" ").
-                append(OllirUtils.getBinOpAssignCode(binOp, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+        // Should it handle a class creation
+        // and WTF happens in a ! operator?
+
+        // TODO: separate this in a AssignmentVisitor, and a BinOpVisitor or at least another visit,
+        // Should we go back and have an Expression Node and an Expression Visitor?
+
+        if(assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral") || assignedNode.getKind().equals("ID")) {
+            String instruction = binOpOllirGenerator.visit(assignedNode, null);
+            System.out.println("Instruction: " + instruction);
+            code.append(binOpOllirGenerator.getCode());
+            code.append(variableCode).append(" ").
+                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
                     append(" ").append(instruction).append(";").append("\n");
+        }
 
         return "";
     }

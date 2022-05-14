@@ -79,6 +79,9 @@ public class OllirUtils {
             Type type = symbolTable.getVariableType(assignNode.get("name"));
             return ":=." + getCode(type);
         }
+        else if(assignNode.getKind().equals("ArrayCreation")) {
+            return ":=.array.i32";
+        }
 
         return "";
         // Int
