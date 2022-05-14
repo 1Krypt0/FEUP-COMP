@@ -7,8 +7,6 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
-import java.util.Stack;
-
 public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
     private final SymbolTable symbolTable;
@@ -63,7 +61,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         arrayAccessNode =  arrayAccessNode.getChildren().get(0);
         //TODO: BandAid Should a class separation : right side of Assigment Exprs -> BinOp or other and visit in AssingmentVisitor
 
-        BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable);
+        BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
         String arrayLength = binOpOllirGenerator.visit(arrayAccessNode, arrayAccessNode);
         code.append(binOpOllirGenerator.getCode());
 
@@ -143,16 +141,14 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         Symbol variableSymbol = ((ProgramSymbolTable) symbolTable).getLocalVariable(this.methodName, variableName);
         String variableCode = OllirUtils.getCode(variableSymbol);
         System.out.println("Variable code: " + variableCode);
-        BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable);
+        BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable,this.methodName);
 
         JmmNode assignedNode = assignNode.getJmmChild(0);
 
 
         if(assignedNode.getKind().equals("ArrayCreation")) {
             String instruction = visit(assignedNode, null);
-            code.append(variableCode).append(" ").
-                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
-                    append(" ").append(instruction).append(";").append("\n");
+            assignmentGenerator(variableCode, assignedNode, instruction);
         }
         else if(assignedNode.getKind().equals("ClassCreation")) {
             // TODO: What goes here?
@@ -163,25 +159,28 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         // Should it? It has the necessary visitors for its own operations, but should it take care of Direct access nodes?
 
 
-        // Should it handle a method call YES PLEASE int[] C = new int[A.length <- This is a BINOP? NO];
+        // Should it handle a method call YES PLEASE int[] C = new int[A.length <- This is a BINOP? NO, BUT SHOULD ];
         // Should it handle an array access
-        // Should it handle an array creation
-        // Should it handle a class creation
+        // Should it handle an array creation NO I GUESS
+        // Should it handle a class creation NO I GUESS
         // and WTF happens in a ! operator?
 
         // TODO: separate this in a AssignmentVisitor, and a BinOpVisitor or at least another visit,
         // Should we go back and have an Expression Node and an Expression Visitor?
-
         if(assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral") || assignedNode.getKind().equals("ID")) {
             String instruction = binOpOllirGenerator.visit(assignedNode, null);
             System.out.println("Instruction: " + instruction);
             code.append(binOpOllirGenerator.getCode());
-            code.append(variableCode).append(" ").
-                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
-                    append(" ").append(instruction).append(";").append("\n");
+            assignmentGenerator(variableCode, assignedNode, instruction);
         }
 
         return "";
+    }
+
+    private void assignmentGenerator(String variableCode, JmmNode assignedNode, String instruction) {
+        code.append(variableCode).append(" ").
+                append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+                append(" ").append(instruction).append(";").append("\n");
     }
 
     private String visitVarDecl(JmmNode jmmNode, Integer integer) {
