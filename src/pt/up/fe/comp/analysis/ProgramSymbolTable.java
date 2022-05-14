@@ -117,4 +117,23 @@ public class ProgramSymbolTable implements SymbolTable {
         this.localVariables.get(methodSignature).addAll(localVariables);
     }
 
+
+    public Type getLocalVariableType(String methodName, String localVariableName) {
+        for (Symbol localVariable : this.localVariables.get(methodName)) {
+            if (localVariable.getName().equals(localVariableName)) {
+                return localVariable.getType();
+            }
+        }
+        return null;
+    }
+
+    public Symbol getLocalVariable(String methodName, String localVariableName) {
+        for (Symbol localVariable : this.localVariables.get(methodName)) {
+            if (localVariable.getName().equals(localVariableName)) {
+                return localVariable;
+            }
+        }
+        return null;
+    }
+
 }
