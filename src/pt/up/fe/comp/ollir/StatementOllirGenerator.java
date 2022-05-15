@@ -2,7 +2,6 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
@@ -11,14 +10,14 @@ import java.util.List;
 
 
 
-public class BinOpOllirGenerator extends AJmmVisitor<Object, String> {
+public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
 
 
     private final ProgramSymbolTable symbolTable;
     final StringBuilder code;
     private final String methodName;
 
-    BinOpOllirGenerator(ProgramSymbolTable symbolTable, String methodName) {
+    StatementOllirGenerator(ProgramSymbolTable symbolTable, String methodName) {
         this.symbolTable = symbolTable;
         this.code = new StringBuilder();
         this.methodName = methodName;
@@ -37,20 +36,7 @@ public class BinOpOllirGenerator extends AJmmVisitor<Object, String> {
 
     private String visitId(JmmNode idNode, Object o) {
         // TODO: Code for putField
-
-       //TODO: Correct name of variable in case it's an argument
-
-
-        Integer variableIndex = symbolTable.getArgumentPosition(methodName, idNode.get("name"));
-
-        if(variableIndex != null) {
-            //TODO: include this behavior in the OllirUtils
-
-            Type type = symbolTable.getArgumentType(methodName, idNode.get("name"));
-            return String.format("$%d", variableIndex) + "." + OllirUtils.getIdCode(idNode.get("name"), symbolTable);
-        }
-
-        return OllirUtils.getIdCode(idNode.get("name"), symbolTable);
+        return OllirUtils.getIdCode(idNode.get("name"), this.symbolTable, this.methodName);
     }
 
     private String visitBool(JmmNode booleanNode, Object o) {

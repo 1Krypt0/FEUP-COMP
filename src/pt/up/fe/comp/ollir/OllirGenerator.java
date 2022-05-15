@@ -3,6 +3,7 @@ package pt.up.fe.comp.ollir;
 import AST.AstNode;
 import AST.AstUtils;
 import pt.up.fe.comp.MethodBody;
+import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
@@ -24,10 +25,10 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
         addVisit(AstNode.Class_Decl, this::classDeclVisitor);
         addVisit(AstNode.Method_Declaration, this::methodDeclVisitor);
         addVisit(AstNode.Main, this::methodDeclVisitor);
+        addVisit(AstNode.Return_Statement, this::visitReturn);
         addVisit(AstNode.Method_Body, this::methodBodyVisitor);
         setDefaultVisit(this::defaultVisit);
     }
-
 
 
     private Integer methodDeclVisitor(JmmNode methodDecl, Integer integer) {
@@ -59,6 +60,20 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
         return 0;
     }
 
+
+    private Integer visitReturn(JmmNode returnNode, Integer integer) {
+        System.out.println("Visit return");
+
+        StatementOllirGenerator statementOllirGenerator =
+                new StatementOllirGenerator((ProgramSymbolTable) this.symbolTable,  returnNode.getJmmParent().get("name"));
+
+        String instruction =  statementOllirGenerator.visit(returnNode.getJmmChild(0), 0);
+
+        // Two options: get return from symbol table or from return instruction
+        String retType = instruction.split("\\.")[1];
+        codeString.append("ret.").append(retType).append(" ").append(instruction).append(";").append("\n");
+        return 0;
+    }
 
     private Integer methodBodyVisitor(JmmNode methodBody, Integer integer) {
 
