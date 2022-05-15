@@ -31,8 +31,9 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         addVisit(AstNode.Method_Body, this::visitMethodBody);
         addVisit(AstNode.Assign, this::visitAssign);
         addVisit(AstNode.Array_Creation, this::visitArrayCreation);
+        addVisit(AstNode.Class_Creation, this::visitClassCreation);
 
-        // addVisit(AstNode.Return, this::visitReturn);
+
         // addVisit(AstNode.Array_Access, this::visitArrayAccess);
 
         /*
@@ -43,6 +44,15 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         setDefaultVisit(this::visitDefault);
 
+    }
+
+    private String visitClassCreation(JmmNode classDecl, Object o) {
+        /*
+        aux1.Fac :=.Fac new(Fac).Fac;
+        invokespecial(aux1.Fac,"<init>", 2).V;
+        */
+        String className = classDecl.get("name");
+        return "new(" + className + ")." + className;
     }
 
     private String visitArrayCreation(JmmNode arrayCreationNode, Object o) {
@@ -61,7 +71,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         arrayAccessNode =  arrayAccessNode.getChildren().get(0);
         //TODO: BandAid Should a class separation : right side of Assigment Exprs -> BinOp or other and visit in AssingmentVisitor
 
-        BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+        StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
         String arrayLength = binOpOllirGenerator.visit(arrayAccessNode, arrayAccessNode);
         code.append(binOpOllirGenerator.getCode());
 
@@ -92,9 +102,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         return "";
     }
 
-    private String visitReturn(JmmNode jmmNode, Object integer) {
-        return "";
-    }
+
 
     private String visitMethodCall(JmmNode jmmNode, Object integer) {
         return "";
@@ -117,41 +125,30 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         Calls to methods declared inside the class can only appear in compounded operation (e.g, a = b * this.m(10,20), where "m” is declared inside the class).
         */
 
-
-        // TODO: we need to check if the variable is in the same method or is a field
-
-        // a could be an array access
-        // a field (getFields method)
-        // a dot expression??
-
-        // a =
-        // AndExpression / BinOP -> Another visitor check
-        // ArrayCreation check
-        // Class Creation
-        // methodCall
-        // arrayAccess
-        // new Object ??
-
-        // TODO: Could be an array access
-        // TODO: Could be a this dot expression
-        // TODO: Could be a literal bool or int
+        // methodCall/DotExpression (length, this, or call)
+        // arrayAccess in left side
+        // a field (getFields method) both sides
+        // ! operator (not)
 
 
         String variableName = assignNode.get("name");
         Symbol variableSymbol = ((ProgramSymbolTable) symbolTable).getLocalVariable(this.methodName, variableName);
-        String variableCode = OllirUtils.getCode(variableSymbol);
-        System.out.println("Variable code: " + variableCode);
-        BinOpOllirGenerator binOpOllirGenerator = new BinOpOllirGenerator((ProgramSymbolTable) symbolTable,this.methodName);
+
+        String variable = OllirUtils.getIdCode(variableName, (ProgramSymbolTable) symbolTable, this.methodName);
+
+        StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable,this.methodName);
 
         JmmNode assignedNode = assignNode.getJmmChild(0);
 
-
         if(assignedNode.getKind().equals("ArrayCreation")) {
             String instruction = visit(assignedNode, null);
-            assignmentGenerator(variableCode, assignedNode, instruction);
+            assignmentGenerator(variable, assignedNode, instruction);
         }
         else if(assignedNode.getKind().equals("ClassCreation")) {
-            // TODO: What goes here?
+            String instruction = visit(assignedNode, null);
+            assignmentGenerator(variable, assignedNode, instruction);
+            String className =  assignedNode.get("name");
+            code.append("invokespecial(" + variable + ", \"<init>\").V;\n");
         }
 
 
@@ -171,7 +168,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
             String instruction = binOpOllirGenerator.visit(assignedNode, null);
             System.out.println("Instruction: " + instruction);
             code.append(binOpOllirGenerator.getCode());
-            assignmentGenerator(variableCode, assignedNode, instruction);
+            assignmentGenerator(variable, assignedNode, instruction);
         }
 
         return "";

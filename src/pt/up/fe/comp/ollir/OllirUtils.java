@@ -82,14 +82,11 @@ public class OllirUtils {
         else if(assignNode.getKind().equals("ArrayCreation")) {
             return ":=.array.i32";
         }
+        else if(assignNode.getKind().equals("ClassCreation")) {
+            return ":=." + assignNode.get("name");
+        }
 
         return "";
-        // Int
-        // Bool
-        // Array Access
-        // Method Call
-        // ID
-        //
     }
 
     public static String getArithmeticOperationCode(String operation) {
@@ -117,7 +114,17 @@ public class OllirUtils {
         return node.get("value") + ".i32";
     }
 
-    public static String getIdCode(String idName, ProgramSymbolTable symbolTable) {
-        return idName + "." +  getCode(symbolTable.getVariableType(idName));
+
+    public static String getIdCode(String idName, ProgramSymbolTable symbolTable, String methodName) {
+        StringBuilder code = new StringBuilder();
+        Integer variableIndex = symbolTable.getArgumentPosition(methodName, idName);
+
+        if(variableIndex != null) {
+            code.append(String.format("$%d.", variableIndex));
+        }
+
+        code.append(idName).append(".").append(getCode(symbolTable.getVariableType(idName)));
+
+        return code.toString();
     }
 }
