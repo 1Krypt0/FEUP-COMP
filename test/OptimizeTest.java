@@ -12,14 +12,16 @@
  * specific language governing permissions and limitations under the License. under the License.
  */
 
+import org.junit.Test;
 import pt.up.fe.comp.TestUtils;
 import pt.up.fe.specs.util.SpecsIo;
 
 public class OptimizeTest {
 
-    // @Test
-    public void testHelloWorld() {
-        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/HelloWorld.jmm"));
-        TestUtils.noErrors(result.getReports());
+    @Test
+    public void testMyFile () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/MyTestFile.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
     }
 }

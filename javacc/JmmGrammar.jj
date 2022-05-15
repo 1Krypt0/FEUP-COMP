@@ -12,7 +12,6 @@ TOKENS_ARE_NODES=false;
 
 */
 
-
 SKIP : " " | "\t" | "\r" | "\n";
 
 TOKEN :
@@ -104,7 +103,9 @@ VarDeclaration #VarDecl: Type <IDENTIFIER> {jjtThis.put("name", lastConsumedToke
 Type:
     SCAN 2
     (
-        (<STRING> {jjtThis.put("type","string");}) | (<BOOLEAN> {jjtThis.put("type","bool");}) | (<IDENTIFIER>  {jjtThis.put("type", lastConsumedToken.getImage());})
+        (<STRING> {jjtThis.put("type","string");}) |
+        (<BOOLEAN> {jjtThis.put("type","bool");}) |
+        (<IDENTIFIER>  {jjtThis.put("type", lastConsumedToken.getImage());})
         |
             <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> {jjtThis.put("is_array", "True");} )? {jjtThis.put("type","int");}
         // Usar get or default no mapa, sendo o default a false
@@ -150,7 +151,7 @@ Statement #void: (
     BlockStatement
     | WhileStatement
     | IfStatement
-    | SCAN 2 ((<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} (<OPEN_SQUARE_BRACES> Expression #ArrayAccess <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression) #Assign <SEMICOLON>)
+    | SCAN 2 ((<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} (<OPEN_SQUARE_BRACES> AndExpression #ArrayAccess <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression) #Assign <SEMICOLON>)
     | AndExpression <SEMICOLON>
     )
 ;

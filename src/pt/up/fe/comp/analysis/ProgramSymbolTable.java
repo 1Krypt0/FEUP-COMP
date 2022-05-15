@@ -117,4 +117,74 @@ public class ProgramSymbolTable implements SymbolTable {
         this.localVariables.get(methodSignature).addAll(localVariables);
     }
 
+
+    public Type getLocalVariableType(String methodName, String localVariableName) {
+        for (Symbol localVariable : this.localVariables.get(methodName)) {
+            if (localVariable.getName().equals(localVariableName)) {
+                return localVariable.getType();
+            }
+        }
+        return null;
+    }
+
+    public Symbol getLocalVariable(String methodName, String localVariableName) {
+        for (Symbol localVariable : this.localVariables.get(methodName)) {
+            if (localVariable.getName().equals(localVariableName)) {
+                return localVariable;
+            }
+        }
+        return null;
+    }
+
+    public Type getVariableType(String variableName) {
+        for (Symbol field : this.fields) {
+            if (field.getName().equals(variableName)) {
+                return field.getType();
+            }
+        }
+        for (String methodName : this.methods) {
+            for (Symbol localVariable : this.localVariables.get(methodName)) {
+                if (localVariable.getName().equals(variableName)) {
+                    return localVariable.getType();
+                }
+            }
+        }
+        // get type from arguments
+        for (String methodName : this.methods) {
+            for (Symbol parameter : this.methodParameters.get(methodName)) {
+                if (parameter.getName().equals(variableName)) {
+                    return parameter.getType();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public Integer getArgumentPosition(String methodName, String argumentName) {
+
+        var a  = this.methodParameters;
+
+        List<Symbol> parameters = this.methodParameters.get(methodName);
+
+        for (int i = 0; i < this.methodParameters.get(methodName).size(); i++) {
+            if (this.methodParameters.get(methodName).get(i).getName().equals(argumentName)) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public String getVariable() {
+        return this.className;
+    }
+
+    public Type getArgumentType(String methodName, String name) {
+        for (Symbol argument : this.methodParameters.get(methodName)) {
+            if (argument.getName().equals(name)) {
+                return argument.getType();
+            }
+        }
+        return null;
+    }
 }
