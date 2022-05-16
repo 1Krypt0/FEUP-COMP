@@ -25,7 +25,7 @@ public enum AstNode {
     False,
     True,
     Array_Creation,
-    Class_Creation;
+    Class_Creation, Dot_Linked, This, Length, Arg;
 
     private final String name;
 

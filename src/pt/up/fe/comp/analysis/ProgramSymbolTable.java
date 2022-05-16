@@ -187,4 +187,41 @@ public class ProgramSymbolTable implements SymbolTable {
         }
         return null;
     }
+
+
+    public boolean isSubStringOfAnImport(String name) {
+        // see if an import string includes the name between the dots
+        for (String importString : this.imports) {
+            if (importString.contains(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public boolean isLocalVariableObjectClassType(String variableName, String methodName) {
+
+        if (variableName.equals(this.className))
+            return true;
+
+        for (Symbol localVariable : this.localVariables.get(methodName)) {
+            if( localVariable.getName().equals(variableName) && localVariable.getType().getName().equals(this.className))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean isField(String variableName) {
+        for (Symbol field : this.fields) {
+            if (field.getName().equals(variableName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+
+
 }

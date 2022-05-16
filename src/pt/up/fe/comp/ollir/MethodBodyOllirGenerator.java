@@ -32,7 +32,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         addVisit(AstNode.Assign, this::visitAssign);
         addVisit(AstNode.Array_Creation, this::visitArrayCreation);
         addVisit(AstNode.Class_Creation, this::visitClassCreation);
-
+        addVisit(AstNode.Dot_Linked, this::visitDotLinked);
 
         // addVisit(AstNode.Array_Access, this::visitArrayAccess);
 
@@ -43,7 +43,19 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         */
 
         setDefaultVisit(this::visitDefault);
+    }
 
+    private String visitDotLinked(JmmNode jmmNode, Object o) {
+
+        System.out.println("Dot Linked");
+
+        DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+        String instruction = dotLinkedOllirGenerator.visit(jmmNode, null);
+
+        code.append(dotLinkedOllirGenerator.getCode());
+
+        code.append(instruction);
+        return "";
     }
 
     private String visitClassCreation(JmmNode classDecl, Object o) {
@@ -87,7 +99,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         // Should we start the parse here?
 
         for (JmmNode child : jmmNode.getChildren()) {
-            visit(child, null);
+            visit(child, null); // TODO: should we use code.append here ?
         }
 
         return "";
