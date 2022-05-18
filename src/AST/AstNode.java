@@ -8,6 +8,7 @@ public enum AstNode {
     Import,
     Chained_Import,
     ID,
+    I_D,
     Class_Decl,
     Method_Declaration,
     Main, Var_Decl,
@@ -18,6 +19,7 @@ public enum AstNode {
     While,
     Method_Call,
     Return_Statement,
+    Negation,
     Array_Access,
     Type,
     Bin_Op,
@@ -30,7 +32,7 @@ public enum AstNode {
     private final String name;
 
     AstNode() {
-        this.name = SpecsStrings.toCamelCase(name(),"_", true);
+        this.name = SpecsStrings.toCamelCase(name(), "_", true);
     }
 
     @Override
