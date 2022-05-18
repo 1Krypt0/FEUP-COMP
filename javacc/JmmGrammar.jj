@@ -13,7 +13,7 @@ TOKENS_ARE_NODES=false;
 */
 
 
-SKIP : " " | "\t" | "\r" | "\n";
+SKIP : " " | "\t" | "\r" | "\n" | <"//" (~["\n","\r"])* ("\n"|"\r")> ;
 
 TOKEN :
 
@@ -56,7 +56,7 @@ TOKEN :
     < INLINE_COMMENT: "//" > |
     < COMMA : ","> |
     < DOT : "." > |
-    // < LINE_COMMENT: "/*" > (!"*/" .)* "*/" >;
+
 
 	// Logic and Control
 	< IF : "if" > |
@@ -73,11 +73,6 @@ TOKEN :
     < IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > |
     < INTEGER_LITERAL : (["0" - "9"])+ >
 ;
-
-// TODO: Correct this implementation
-//SPECIAL_TOKEN: 
-//	<INLINE_COMMENT> (~["\n","\r"])* ("\n"|"\r"|"\r\n") 
-//; 
 
 
 Start #Init : ImportDeclaration ClassDeclaration <EOF> ;
