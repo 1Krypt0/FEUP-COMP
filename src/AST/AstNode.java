@@ -20,7 +20,7 @@ public enum AstNode {
     Bin_Op,
     Negation,
     Integer_Literal,
-    Array_Access, Return_Statement, Assign, Dot_Linked;
+    Array_Access, Return_Statement, Assign, Dot_Linked, Length;
 
     private final String name;
 
