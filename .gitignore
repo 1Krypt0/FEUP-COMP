@@ -8,6 +8,10 @@
 gradle/
 gradlew*
 
+.classpath
+.project
+.settings/
+
 # Class files
 **/*.class
 !libs-jmm/**/*.class
