@@ -54,4 +54,46 @@ public class OllirToJasmin {
         }
         return "";
     }
+
+    public String getCode(Method method){
+        var code = new StringBuilder();
+        code.append(".method public ");
+
+        // Talvez falte um IF aqui para caso seja default (??) // Timestamp: 3h 43m 20s
+
+        if (method.isStaticMethod()){
+            code.append("static ");
+        }
+
+        code.append(method.getMethodName()).append("(");
+
+        var methodParamTypes = method.getParams().stream()
+                .map(element -> getJasminType(element.getType()))
+                .collect(Collectors.joining());
+
+        code.append(methodParamTypes).append(")").append(getJasminType(method.getReturnType()));
+
+        return code.toString();
+
+    }
 }
+
+    public String getJasminType(Type type){
+        if (type instanceof ArrayType){
+            return "[" + getJasminType(((ArrayType) type).getTypeOfElements());
+        }
+
+        return getJasminType(type.getTypeOfElement());
+
+    }
+
+    public String getJasminType(ElementType type){
+        switch(type){
+        case STRING:
+            return "Ljava/lang/String;";
+        case VOID:
+            return "V";
+        default:
+            throw new NotImplementedException(type);
+        }
+    }
