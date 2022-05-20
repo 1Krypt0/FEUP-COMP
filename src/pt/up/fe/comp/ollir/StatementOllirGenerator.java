@@ -2,6 +2,7 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
@@ -30,12 +31,30 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
         // TODO: we need to check if the variable is in the same method or is a field (getField)
         // addVisit(AstNode.This, this::visitThis);
         addVisit("ID", this::visitId);
+        addVisit(AstNode.Class_Creation, this::visitClassCreation);
+        addVisit("DotLinked", this::visitDotLinked);
 
         // addVisit(AstNode.This, this::visitThis);
     }
 
+    private String visitClassCreation(JmmNode classNode, Object o) {
+        String className = classNode.get("name");
+        String caller_var = "temp" + classNode.get("col") + "_" + classNode.get("line") + "." + className;
+        code.append(caller_var).append(".").append(className).append(" :=.").append(className).append(" new(").append(className).append(").").append(className).append(";\n");
+        code.append("invokespecial(").append(caller_var).append(", \"<init>\").V;\n");
+
+        return caller_var;
+    }
+
+    private String visitDotLinked(JmmNode jmmNode, Object o) {
+
+        DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator(this.symbolTable, this.methodName);
+
+        return "";
+    }
+
     private String visitId(JmmNode idNode, Object o) {
-        // TODO: Code for putField
+        // TODO: Code for getField
         return OllirUtils.getIdCode(idNode.get("name"), this.symbolTable, this.methodName);
     }
 
