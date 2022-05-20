@@ -1,12 +1,10 @@
 package pt.up.fe.comp.analysis;
 
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ImportVisitor extends AJmmVisitor<JmmNode, String> {
 
@@ -35,6 +33,5 @@ public class ImportVisitor extends AJmmVisitor<JmmNode, String> {
 
         return !imports.isEmpty();
     }
-
 
 }

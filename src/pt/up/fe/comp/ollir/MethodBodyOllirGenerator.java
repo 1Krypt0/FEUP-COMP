@@ -113,9 +113,16 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         //if it's a putfield visit binOp and MethodCall and return temp var and not instruction
         String varScope = OllirUtils.getVariableScope(variableName, methodName, (ProgramSymbolTable) symbolTable);
 
+        if(assignNode.getChildren().size() == 2 && assignNode.getJmmChild(0).getKind().equals("ArrayAccess")) {
+            ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+            variable = arrayAccessOllirGenerator.visit(assignNode, "left");
+            code.append(arrayAccessOllirGenerator.getCode());
+            assignedNode = assignNode.getJmmChild(1);
+        }
+
+
 
         if (assignedNode.getKind().equals("ArrayCreation")) {
-
             if(!varScope.equals("field")){
                 String instruction = visit(assignedNode, null);
                 assignmentGenerator(variable, assignedNode, instruction);
@@ -171,7 +178,14 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
     private void assignmentGenerator(String variableCode, JmmNode assignedNode, String instruction) {
 
-        String varName = variableCode.substring(0, variableCode.indexOf('.'));
+
+        String varName;
+        if(variableCode.contains("[")){
+            varName = variableCode.substring(0, variableCode.indexOf("["));
+        }
+        else {
+            varName = variableCode.substring(0, variableCode.indexOf('.'));
+        }
 
         if (((ProgramSymbolTable) symbolTable).hasLocalVariable(this.methodName, varName)
                 || ((ProgramSymbolTable) symbolTable).getArgumentPosition(this.methodName, varName) != -1) {
