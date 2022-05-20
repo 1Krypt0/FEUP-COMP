@@ -93,9 +93,6 @@ public class OllirToJasmin {
     }
 
     public String getCode(Instruction method){
-
-        // -- Video Tutorial cutoff (Part1 -> Part2 tranfer), next 3 lines not visible but 4th line implemented.
-        // -- Maybe changed to a standalone method?
          FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
          instructionMap.put(CallInstruction.class, this::getCode);
          instructionMap.apply(method);
