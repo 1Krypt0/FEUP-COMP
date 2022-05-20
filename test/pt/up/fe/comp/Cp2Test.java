@@ -79,6 +79,7 @@ public class Cp2Test {
         testJmmCompilation(resource, null);
     }
 
+    /*
     @Test
     public void test_1_00_SymbolTable() {
         // System.out.println(TestUtils.parse(SpecsIo.getResource("fixtures/public/cp2/SymbolTable.jmm"))
@@ -207,6 +208,7 @@ public class Cp2Test {
         TestUtils.noErrors(result);
     }
 
+     */
     @Test
     public void test_2_01_CompileBasic() {
         testJmmCompilation("fixtures/public/cp2/CompileBasic.jmm");
@@ -227,6 +229,7 @@ public class Cp2Test {
         testJmmCompilation("fixtures/public/cp2/CompileAssignment.jmm");
     }
 
+    /*
     @Test
     public void test_3_01_OllirToJasminBasic() {
         testOllirToJasmin("fixtures/public/cp2/OllirToJasminBasic.ollir");
@@ -246,5 +249,5 @@ public class Cp2Test {
     public void test_3_04_OllirToJasminFields() {
         testOllirToJasmin("fixtures/public/cp2/OllirToJasminFields.ollir");
     }
-
+    */
 }
