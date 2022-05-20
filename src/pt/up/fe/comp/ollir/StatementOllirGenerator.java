@@ -49,13 +49,26 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitDotLinked(JmmNode jmmNode, Object o) {
 
         DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator(this.symbolTable, this.methodName);
+        String instruction = dotLinkedOllirGenerator.visit(jmmNode, ".V");
+        code.append(dotLinkedOllirGenerator.getCode());
 
-        return "";
+        return instruction;
     }
 
     private String visitId(JmmNode idNode, Object o) {
         // TODO: Code for getField
-        return OllirUtils.getIdCode(idNode.get("name"), this.symbolTable, this.methodName);
+
+        if(symbolTable.hasLocalVariable(this.methodName, idNode.get("name")) || symbolTable.getArgumentPosition(this.methodName, idNode.get("name")) != -1) {
+            return OllirUtils.getIdCode(idNode.get("name"), this.symbolTable, this.methodName);
+        }else if(symbolTable.hasField(idNode.get("name"))) {
+            Type type = symbolTable.getFieldType(idNode.get("name"));
+            String temp_var = "temp" + idNode.get("col") + "_" + idNode.get("line") + "." + OllirUtils.getCode(type);
+
+            code.append(temp_var).append(" :=.").append(OllirUtils.getCode(type)).append(" getfield(this, ").append(idNode.get("name")).append(".").append(OllirUtils.getCode(type)).append(").").append(OllirUtils.getCode(type)).append(";\n");
+
+            return temp_var;
+        }
+        return "";
     }
 
     private String visitBool(JmmNode booleanNode, Object o) {

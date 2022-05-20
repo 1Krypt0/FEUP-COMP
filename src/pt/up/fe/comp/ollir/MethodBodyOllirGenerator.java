@@ -5,6 +5,7 @@ import freemarker.core.ast.Dot;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
@@ -51,6 +52,13 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
     private String visitClassCreation(JmmNode classDecl, Object o) {
         String className = classDecl.get("name");
+
+        if(o != null) {
+            String tempVar = "temp_" + classDecl.get("col") + "_" + classDecl.get("line") + "." + className;
+            code.append(tempVar).append(" :=.").append(className).append(" new(").append(className).append(").").append(className).append(";\n");
+            return tempVar;
+        }
+
         return "new(" + className + ")." + className;
     }
 
@@ -59,7 +67,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         JmmNode arrayAccessNode = arrayCreationNode.getChildren().get(0); // This is the BinOp that has the length of the array
         JmmNode arrayAccessOperationNode = arrayAccessNode.getChildren().get(0); // This is the array
 
-        arrayAccessNode =  arrayAccessNode.getChildren().get(0);
+        arrayAccessNode = arrayAccessNode.getChildren().get(0);
         //TODO: BandAid Should a class separation : right side of Assigment Exprs -> BinOp or other and visit in AssingmentVisitor
 
         StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
@@ -95,82 +103,97 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         String variable = OllirUtils.getIdCode(variableName, (ProgramSymbolTable) symbolTable, this.methodName);
 
-        StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable,this.methodName);
+        StatementOllirGenerator statementOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
 
         JmmNode assignedNode = assignNode.getJmmChild(0);
 
-        if(assignedNode.getKind().equals("ArrayCreation")) {
-            String instruction = visit(assignedNode, null);
+        //TODO: ArrayAccess for assignNode
+
+
+        //if it's a putfield visit binOp and MethodCall and return temp var and not instruction
+        String varScope = OllirUtils.getVariableScope(variableName, methodName, (ProgramSymbolTable) symbolTable);
+
+
+        if (assignedNode.getKind().equals("ArrayCreation")) {
+
+            if(!varScope.equals("field")){
+                String instruction = visit(assignedNode, null);
+                assignmentGenerator(variable, assignedNode, instruction);
+            } else {
+                String tempVar = "temp_" + assignedNode.get("col") + "_" + assignedNode.get("line") + ".array.i32";
+                String instruction = visit(assignedNode, null);
+                code.append(tempVar).append(" :=.array.i32 ").append(instruction).append(";\n");
+                assignmentGenerator(variable, assignedNode, tempVar);
+            }
+
+        } else if (assignedNode.getKind().equals("ClassCreation")) {
+            String instruction = visit(assignedNode, (varScope.equals("field") ? "field" : null));
             assignmentGenerator(variable, assignedNode, instruction);
-        }
-        else if(assignedNode.getKind().equals("ClassCreation")) {
-            String instruction = visit(assignedNode, null);
-            assignmentGenerator(variable, assignedNode, instruction);
-            String className =  assignedNode.get("name");
             code.append("invokespecial(").append(variable).append(", \"<init>\").V;\n");
         }
 
-        if(assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral")) {
-            String instruction = binOpOllirGenerator.visit(assignedNode, null);
+        if (assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral")) {
+            String instruction = statementOllirGenerator.visit(assignedNode, (varScope.equals("field")) ? "field" : null);
             System.out.println("Instruction: " + instruction);
-            code.append(binOpOllirGenerator.getCode());
+            code.append(statementOllirGenerator.getCode());
             assignmentGenerator(variable, assignedNode, instruction);
         }
 
+        if (assignedNode.getKind().equals("ID")) {
 
-        if(assignedNode.getKind().equals("ID")){
-            String instruction = binOpOllirGenerator.visit(assignedNode, null);
-            System.out.println("Instruction: " + instruction);
-            code.append(binOpOllirGenerator.getCode());
-            assignmentGenerator(variable, assignedNode, instruction);
+            if(assignNode.getChildren().size() == 2){
+                if (assignNode.getJmmChild(1).getKind().equals("ArrayAccess")) {
+                    ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+                    String instruction = arrayAccessOllirGenerator.visit(assignNode, "right");
+                    code.append(arrayAccessOllirGenerator.getCode());
+                    assignmentGenerator(variable, assignedNode, instruction);
+                }
+            } else {
+                // BinaryOp takes care of field aswell
+                String instruction = statementOllirGenerator.visit(assignedNode, null);
+                System.out.println("Instruction: " + instruction);
+                code.append(statementOllirGenerator.getCode());
+                assignmentGenerator(variable, assignedNode, instruction);
+            }
         }
 
-        /*if(assignedNode.getKind().equals("ArrayAccess")) {
-            ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
-            String instruction = arrayAccessOllirGenerator.visit(assignedNode, null);
-            code.append(arrayAccessOllirGenerator.getCode());
-            assignmentGenerator(variable, assignedNode, instruction);
-        }*/
-
-        /*if(assignedNode.getKind().equals("DotLinked")) {
+        if (assignedNode.getKind().equals("DotLinked")) {
             DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
             String instruction = dotLinkedOllirGenerator.visit(assignedNode, null);
             code.append(dotLinkedOllirGenerator.getCode());
             assignmentGenerator(variable, assignedNode, instruction);
-        }*/
+        }
+
+
 
         return "";
     }
 
     private void assignmentGenerator(String variableCode, JmmNode assignedNode, String instruction) {
 
-        if(assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral") || assignedNode.getKind().equals("True") || assignedNode.getKind().equals("False")) {
-            code.append(variableCode).append(" ").
-                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
-                    append(" ").append(instruction).append(";").append("\n");
-        }
-        else if(assignedNode.getKind().equals("ID")) {
-            String scope = OllirUtils.getVariableScope(assignedNode.get("name"), this.methodName,(ProgramSymbolTable) this.symbolTable);
-            if(scope.equals("local")) {
+        String varName = variableCode.substring(0, variableCode.indexOf('.'));
+
+        if (((ProgramSymbolTable) symbolTable).hasLocalVariable(this.methodName, varName)
+                || ((ProgramSymbolTable) symbolTable).getArgumentPosition(this.methodName, varName) != -1) {
+
+
+            if(assignedNode.getKind().equals("DotLinked")) {
+                Type type = ((ProgramSymbolTable) symbolTable).getVariableType(varName);
+                code.append(variableCode).append(" :=.").append(OllirUtils.getCode(type)).append(" ").append(instruction);
+            }
+            else {
                 code.append(variableCode).append(" ").
                         append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
                         append(" ").append(instruction).append(";").append("\n");
             }
-            else if(scope.equals("argument")) {
-                code.append(variableCode).append(" ").
-                        append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
-                        append(" ").append(instruction).append(";").append("\n");
-            }
-            else if(scope.equals("import")) {
-
-            }
-            // else
-            code.append(variableCode).append(" ").
-                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
-                    append(" ").append(instruction).append(";").append("\n");
-
         }
-
+        else{
+            // fieldName is the substring of variableCode until the first '.'
+            if(((ProgramSymbolTable) symbolTable).hasField(varName)){
+                Type varType = ((ProgramSymbolTable) symbolTable).getFieldType(varName);
+                code.append("putfield(this, ").append(varName).append(".").append(OllirUtils.getCode(varType)).append(", ").append(instruction).append(").V;\n");
+            }
+        }
 
     }
 

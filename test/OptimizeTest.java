@@ -79,13 +79,6 @@ public class OptimizeTest {
     }
 
     @Test
-    public void FieldAccessCompoundDotLinkedTest() {
-        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/FieldAccessCompoundDotLinked.jmm"));
-        // TestUtils.noErrors(result.getReports());
-        TestUtils.noErrors(result);
-    }
-
-    @Test
     public void DotLinkedSpecialCasesTest() {
         var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/OtherDotLinkedCases.jmm"));
         // TestUtils.noErrors(result.getReports());
@@ -101,20 +94,38 @@ public class OptimizeTest {
     }
 
 
-
-
-    // PASSING
-    // ---------------------------------------------------------------------------------------------
-
-
-
-
-    /*@Test
-    public void completeExample () {
-        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/CompleteExample.jmm"));
+    // Access Fields
+    @Test
+    public void FieldAccessTest () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/FieldAccess.jmm"));
         // TestUtils.noErrors(result.getReports());
         TestUtils.noErrors(result);
-    }*/
+    }
+
+    // Putting fields
+    @Test
+    public void FieldAttributionTest () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/FieldAttribution.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+
+    // var with binOp
+    @Test
+    public void testVarWithBinOp () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/VarWithBinOp.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+
+
+    // var with method invocation
+    @Test
+    public void testVarWithMethodInvocation () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/VarWithMethodInvocation.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
 
 
     @Test
@@ -135,4 +146,86 @@ public class OptimizeTest {
     public void test_2_04_CompileAssignment() {
         testJmmCompilation("fixtures/public/cp2/CompileAssignment.jmm");
     }
+
+
+    // putField with binOp
+    @Test
+    public void testPutFieldWithBinOp () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/PutFieldWithBinOp.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+
+    @Test
+    public void FieldAccessCompoundDotLinkedTest() {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/FieldAccessCompoundDotLinked.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+    // PASSING
+    // ---------------------------------------------------------------------------------------------
+
+
+
+
+
+    // ASSIGNS
+
+    // Access Array value
+    @Test
+    public void ArrayAccessTest () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/ArrayAccess.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+
+
+
+    @Test
+    public void ArrayStorageTest () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/ArrayStorage.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+    //Put in array address
+
+
+
+
+    /*
+    // Assign a method with a dotLinked argument
+    @Test
+    public void testMethodWithDotLinkedArgument () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/MethodWithDotLinkedArgument.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+
+    // Method with field as var
+    @Test
+    public void MethodWithFieldAsVarTest () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/MethodWithFieldAsVar.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+
+     // import dot linked compound operations
+    @Test
+    public void DotLinkedImportCompoundOperationsTest () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/DotLinkedImportCompoundOperations.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }*/
+
+
+
+
+
+     /*@Test
+    public void completeExample () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/CompleteExample.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }*/
+
 }
