@@ -119,7 +119,7 @@ public class OllirUtils {
         StringBuilder code = new StringBuilder();
         Integer variableIndex = symbolTable.getArgumentPosition(methodName, idName);
 
-        if(variableIndex != null) {
+        if(variableIndex != -1) {
             code.append(String.format("$%d.", variableIndex));
         }
 
@@ -127,4 +127,36 @@ public class OllirUtils {
 
         return code.toString();
     }
+
+
+    public static String getVariableScope(String variableName, String methodName, ProgramSymbolTable symbolTable) {
+        // loop through all local variables
+        for (Symbol symbol : symbolTable.getLocalVariables(methodName)) {
+            if (symbol.getName().equals(variableName)) {
+                return "local";
+            }
+        }
+        // loop through all arguments
+        for (Symbol symbol : symbolTable.getArguments(methodName)) {
+            if (symbol.getName().equals(variableName)) {
+                return "argument";
+            }
+        }
+
+        // loop through all fields
+        for (Symbol symbol : symbolTable.getFields()) {
+            if (symbol.getName().equals(variableName)) {
+                return "field";
+            }
+        }
+
+        // loop through all imports
+        if(symbolTable.isImport(variableName)) {
+            return "import";
+        }
+
+        return "";
+    }
+
+
 }

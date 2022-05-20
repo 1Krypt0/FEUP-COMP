@@ -3,39 +3,64 @@ package pt.up.fe.comp.ollir;
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
 public class ArrayAccessOllirGenerator extends AJmmVisitor<Object, String> {
 
-    private StringBuilder code;
-    private SymbolTable symbolTable;
-    private String methodName;
+    private final StringBuilder code;
+    private final ProgramSymbolTable symbolTable;
+    private final String methodName;
 
 
-    public ArrayAccessOllirGenerator(SymbolTable symbolTable, String methodName) {
+    public ArrayAccessOllirGenerator(ProgramSymbolTable symbolTable, String methodName) {
         this.symbolTable = symbolTable;
         this.code = new StringBuilder();
         this.methodName = methodName;
 
 
-        addVisit(AstNode.Array_Access, this::visitArrayAccess);
+        addVisit(AstNode.Assign, this::visitArrayAccessAssign);
         setDefaultVisit(this::visitDefault);
     }
 
-    private String visitDefault(JmmNode jmmNode, Object o) {
+    private String visitDefault(JmmNode jmmNode, Object side) {
         return "";
     }
 
-    private String visitArrayAccess(JmmNode arrayAccessNode, Object o) {
-        StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
-        JmmNode accessExpression = arrayAccessNode.getJmmChild(0);
-        String instruction =  binOpOllirGenerator.visit(accessExpression, null);
+    private String visitArrayAccessAssign(JmmNode arrayAssignAccess, Object o) {
 
+        String arrayName = arrayAssignAccess.getJmmChild(0).get("name");
+        JmmNode accessExpression = arrayAssignAccess.getJmmChild(1);
+        int argPos;
+
+        StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator(symbolTable, this.methodName);
+
+
+        String instruction =  binOpOllirGenerator.visit(accessExpression.getJmmChild(0), this.methodName);
         code.append(binOpOllirGenerator.getCode());
 
-        return instruction;
+        if(this.symbolTable.hasLocalVariable(this.methodName, arrayName)) {
+            return arrayName + "[" + instruction + "].i32";
+
+        } else if((argPos = this.symbolTable.getArgumentPosition(this.methodName, arrayName)) != -1) {
+            return "$" + argPos + "." + arrayName + "[" + instruction + "].i32";
+        }
+        else if (symbolTable.hasField(arrayName)){
+            if (o.equals("right")) {
+                // it's a getfield instruction
+                String temp_var = "temp_" + arrayAssignAccess.get("col") + "_" + arrayAssignAccess.get("row");
+                code.append(temp_var).append(" :=.array.i32 ").append("getfield(this, ").append(arrayName).append(")");
+
+                return temp_var + "[ " + instruction + " ].i32";
+            } else if(o.equals("left")) {
+                // code.append("putfield(this, " + varName + "." + OllirUtils.getCode(varType) + ", " + instruction +  ").V;\n");
+            }
+        }
+
+        return "";
     }
+
 
     public String getCode() {
         return code.toString();

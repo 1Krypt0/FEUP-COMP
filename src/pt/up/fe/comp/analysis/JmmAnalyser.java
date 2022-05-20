@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import pt.up.fe.comp.analysis.semantic.type.BooleanConditionAnalyser;
 import pt.up.fe.comp.jmm.analysis.JmmAnalysis;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
@@ -18,11 +19,14 @@ public class JmmAnalyser implements JmmAnalysis {
         List<Report> reports = new ArrayList<>();
 
         ProgramSymbolTable symbolTable = new ProgramSymbolTable();
-        var symbolTableFiller = new SymbolTableFiller();
+        SymbolTableFiller symbolTableFiller = new SymbolTableFiller();
         symbolTableFiller.visit(parserResult.getRootNode(), symbolTable);
-
         reports.addAll(symbolTableFiller.getReports());
 
-        return new JmmSemanticsResult(parserResult, symbolTable, Collections.emptyList());
+        BooleanConditionAnalyser analyser = new BooleanConditionAnalyser(symbolTable);
+        analyser.visit(parserResult.getRootNode(), reports);
+        System.out.println("REPORTS: " + reports);
+
+        return new JmmSemanticsResult(parserResult, symbolTable, reports);
     }
 }

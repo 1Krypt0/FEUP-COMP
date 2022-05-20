@@ -2,6 +2,7 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
@@ -30,13 +31,44 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
         // TODO: we need to check if the variable is in the same method or is a field (getField)
         // addVisit(AstNode.This, this::visitThis);
         addVisit("ID", this::visitId);
+        addVisit(AstNode.Class_Creation, this::visitClassCreation);
+        addVisit("DotLinked", this::visitDotLinked);
 
         // addVisit(AstNode.This, this::visitThis);
     }
 
+    private String visitClassCreation(JmmNode classNode, Object o) {
+        String className = classNode.get("name");
+        String caller_var = "temp" + classNode.get("col") + "_" + classNode.get("line") + "." + className;
+        code.append(caller_var).append(".").append(className).append(" :=.").append(className).append(" new(").append(className).append(").").append(className).append(";\n");
+        code.append("invokespecial(").append(caller_var).append(", \"<init>\").V;\n");
+
+        return caller_var;
+    }
+
+    private String visitDotLinked(JmmNode jmmNode, Object o) {
+
+        DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator(this.symbolTable, this.methodName);
+        String instruction = dotLinkedOllirGenerator.visit(jmmNode, ".V");
+        code.append(dotLinkedOllirGenerator.getCode());
+
+        return instruction;
+    }
+
     private String visitId(JmmNode idNode, Object o) {
-        // TODO: Code for putField
-        return OllirUtils.getIdCode(idNode.get("name"), this.symbolTable, this.methodName);
+        // TODO: Code for getField
+
+        if(symbolTable.hasLocalVariable(this.methodName, idNode.get("name")) || symbolTable.getArgumentPosition(this.methodName, idNode.get("name")) != -1) {
+            return OllirUtils.getIdCode(idNode.get("name"), this.symbolTable, this.methodName);
+        }else if(symbolTable.hasField(idNode.get("name"))) {
+            Type type = symbolTable.getFieldType(idNode.get("name"));
+            String temp_var = "temp" + idNode.get("col") + "_" + idNode.get("line") + "." + OllirUtils.getCode(type);
+
+            code.append(temp_var).append(" :=.").append(OllirUtils.getCode(type)).append(" getfield(this, ").append(idNode.get("name")).append(".").append(OllirUtils.getCode(type)).append(").").append(OllirUtils.getCode(type)).append(";\n");
+
+            return temp_var;
+        }
+        return "";
     }
 
     private String visitBool(JmmNode booleanNode, Object o) {
@@ -44,6 +76,12 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
     }
 
     private String visitIntegerLiteral(JmmNode node, Object needsVariable) {
+
+        if(needsVariable != null) {
+            String temp_var = "temp" + node.get("col") + "_" + node.get("line") + ".i32";
+            code.append(temp_var).append(" :=.i32 ").append(node.get("value")).append(".i32;\n");
+            return temp_var;
+        }
         return OllirUtils.getIntegerLiteralCode(node);
     }
 
