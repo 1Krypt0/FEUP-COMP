@@ -99,6 +99,13 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
             return symbol.getType().isArray() ? "array" : symbol.getType().getName();
         }
 
+        boolean isImportedClass = symbolTable.isImport(name);
+
+        if(isImportedClass) {
+            node.put("type", name);
+            return name;
+        }
+
         reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                 Integer.parseInt(node.get("col")), "Variable " + name + " does not " + "exist"));
 
