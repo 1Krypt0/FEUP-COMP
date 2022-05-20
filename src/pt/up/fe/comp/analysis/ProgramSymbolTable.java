@@ -10,13 +10,13 @@ public class ProgramSymbolTable implements SymbolTable {
 
 
     private final List<String> imports;
-    private  String className;
-    private  String superClass;
     private final List<String> methods;
     private final Map<String, Type> methodReturnTypes;
     private final Map<String, List<Symbol>> methodParameters;
     private final List<Symbol> fields;
     private final Map<String, List<Symbol>> localVariables;
+    private String className;
+    private String superClass;
 
     public ProgramSymbolTable() {
         this.imports = new ArrayList<>();
@@ -69,13 +69,12 @@ public class ProgramSymbolTable implements SymbolTable {
         return this.localVariables.get(methodSignature);
     }
 
+    public void setClassName(String className) {
+        this.className = className;
+    }
 
     public void addImport(String importName) {
         this.imports.add(importName);
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
     }
 
     public void setSuperClass(String superClass) {
@@ -100,12 +99,41 @@ public class ProgramSymbolTable implements SymbolTable {
         return this.fields.stream().anyMatch(f -> f.getName().equals(fieldName));
     }
 
+    public Symbol getField(String fieldName) {
+        for (Symbol symbol : fields) {
+            if (symbol.getName().equals(fieldName)) {
+                return symbol;
+            }
+        }
+        return null;
+    }
+
+    public Symbol getLocalVariable(String methodName, String fieldName) {
+        for (Symbol symbol : localVariables.get(methodName)) {
+            if (symbol.getName().equals(fieldName)) {
+                return symbol;
+            }
+        }
+        return null;
+    }
+
+    public Symbol getMethodParameter(String methodName, String parameterName) {
+        for (Symbol symbol : methodParameters.get(methodName)) {
+            if (symbol.getName().equals(parameterName)) {
+                return symbol;
+            }
+        }
+
+        return null;
+    }
+
     public void addLocalVariable(String methodSignature, Symbol localVariable) {
         if (!this.localVariables.containsKey(methodSignature)) {
             this.localVariables.put(methodSignature, new ArrayList<>());
         }
         this.localVariables.get(methodSignature).add(localVariable);
     }
+
     public boolean hasLocalVariable(String methodSignature, String localVariableName) {
         return this.localVariables.get(methodSignature).stream().anyMatch(f -> f.getName().equals(localVariableName));
     }

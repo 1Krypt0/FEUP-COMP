@@ -1,15 +1,13 @@
 package pt.up.fe.comp.analysis;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+import pt.up.fe.comp.analysis.semantic.type.SemanticAnalyser;
 import pt.up.fe.comp.jmm.analysis.JmmAnalysis;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp.jmm.report.Report;
-
 
 public class JmmAnalyser implements JmmAnalysis {
     @Override
@@ -18,11 +16,14 @@ public class JmmAnalyser implements JmmAnalysis {
         List<Report> reports = new ArrayList<>();
 
         ProgramSymbolTable symbolTable = new ProgramSymbolTable();
-        var symbolTableFiller = new SymbolTableFiller();
+        SymbolTableFiller symbolTableFiller = new SymbolTableFiller();
         symbolTableFiller.visit(parserResult.getRootNode(), symbolTable);
-
         reports.addAll(symbolTableFiller.getReports());
 
-        return new JmmSemanticsResult(parserResult, symbolTable, Collections.emptyList());
+        SemanticAnalyser analyser = new SemanticAnalyser(symbolTable);
+        analyser.visit(parserResult.getRootNode(), reports);
+        System.out.println("REPORTS: " + reports);
+
+        return new JmmSemanticsResult(parserResult, symbolTable, reports);
     }
 }

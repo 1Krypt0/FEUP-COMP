@@ -13,7 +13,7 @@ TOKENS_ARE_NODES=false;
 */
 
 
-SKIP : " " | "\t" | "\r" | "\n";
+SKIP : " " | "\t" | "\r" | "\n" | <"//" (~["\n","\r"])* ("\n"|"\r")> ;
 
 TOKEN :
 
@@ -56,7 +56,7 @@ TOKEN :
     < INLINE_COMMENT: "//" > |
     < COMMA : ","> |
     < DOT : "." > |
-    // < LINE_COMMENT: "/*" > (!"*/" .)* "*/" >;
+
 
 	// Logic and Control
 	< IF : "if" > |
@@ -73,11 +73,6 @@ TOKEN :
     < IDENTIFIER : ["a"-"z", "A"-"Z", "_", "$"](["a"-"z", "A"-"Z", "_", "0"-"9"])* > |
     < INTEGER_LITERAL : (["0" - "9"])+ >
 ;
-
-// TODO: Correct this implementation
-//SPECIAL_TOKEN: 
-//	<INLINE_COMMENT> (~["\n","\r"])* ("\n"|"\r"|"\r\n") 
-//; 
 
 
 Start #Init : ImportDeclaration ClassDeclaration <EOF> ;
@@ -104,7 +99,7 @@ VarDeclaration #VarDecl: Type <IDENTIFIER> {jjtThis.put("name", lastConsumedToke
 Type:
     SCAN 2
     (
-        (<STRING> {jjtThis.put("type","string");}) | (<BOOLEAN> {jjtThis.put("type","bool");}) | (<IDENTIFIER>  {jjtThis.put("type", lastConsumedToken.getImage());})
+        (<STRING> {jjtThis.put("type","string");}) | (<BOOLEAN> {jjtThis.put("type","boolean");}) | (<IDENTIFIER>  {jjtThis.put("type", lastConsumedToken.getImage());})
         |
             <INT> (<OPEN_SQUARE_BRACES> <CLOSE_SQUARE_BRACES> {jjtThis.put("is_array", "True");} )? {jjtThis.put("type","int");}
         // Usar get or default no mapa, sendo o default a false
