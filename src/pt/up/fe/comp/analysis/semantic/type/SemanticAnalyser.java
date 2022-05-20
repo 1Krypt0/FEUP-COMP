@@ -62,6 +62,8 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         return methodReturnType;
     }
 
+
+
     private String visitIDs(JmmNode node, List<Report> reports) {
         final String name = node.get("name");
         Symbol symbol = symbolTable.getField(name);
@@ -73,6 +75,13 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
                 node.put("type", symbol.getType().getName());
             }
             return symbol.getType().isArray() ? "array" : symbol.getType().getName();
+        }
+
+        boolean isImportedClass = symbolTable.isImport(name);
+
+        if(isImportedClass) {
+            node.put("type", name);
+            return name;
         }
 
         String methodName = node.getAncestor("MethodDeclaration").get().get("name");
@@ -97,13 +106,6 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
                 node.put("type", symbol.getType().getName());
             }
             return symbol.getType().isArray() ? "array" : symbol.getType().getName();
-        }
-
-        boolean isImportedClass = symbolTable.isImport(name);
-
-        if(isImportedClass) {
-            node.put("type", name);
-            return name;
         }
 
         reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
