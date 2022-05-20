@@ -7,6 +7,9 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class ArrayAccessOllirGenerator extends AJmmVisitor<Object, String> {
 
     private final StringBuilder code;
@@ -30,14 +33,18 @@ public class ArrayAccessOllirGenerator extends AJmmVisitor<Object, String> {
 
     private String visitArrayAccessAssign(JmmNode arrayAssignAccess, Object o) {
 
-        String arrayName = arrayAssignAccess.getJmmChild(0).get("name");
-        JmmNode accessExpression = arrayAssignAccess.getJmmChild(1);
+        // JmmNode assignedVarIdNode = arrayAssignAccess.getChildren().stream().filter(node -> node.getKind().equals("ID")).findFirst().get();
+        JmmNode arrayAccessNode = arrayAssignAccess.getChildren().stream().filter(node -> node.getKind().equals("ArrayAccess")).findFirst().get();
+
+
+        String arrayName = arrayAssignAccess.get("name");
+        JmmNode accessExpression = arrayAccessNode.getJmmChild(0);
         int argPos;
 
         StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator(symbolTable, this.methodName);
 
 
-        String instruction =  binOpOllirGenerator.visit(accessExpression.getJmmChild(0), this.methodName);
+        String instruction =  binOpOllirGenerator.visit(accessExpression, this.methodName);
         code.append(binOpOllirGenerator.getCode());
 
         if(this.symbolTable.hasLocalVariable(this.methodName, arrayName)) {

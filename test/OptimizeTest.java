@@ -162,22 +162,20 @@ public class OptimizeTest {
         // TestUtils.noErrors(result.getReports());
         TestUtils.noErrors(result);
     }
-    // PASSING
-    // ---------------------------------------------------------------------------------------------
-
-
-
-
-
-    // ASSIGNS
 
     // Access Array value
     @Test
     public void ArrayAccessTest () {
+        // TODO: Fix this test for x = field_array[0];
         var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/ArrayAccess.jmm"));
         // TestUtils.noErrors(result.getReports());
         TestUtils.noErrors(result);
     }
+
+
+    // PASSING
+    // ---------------------------------------------------------------------------------------------
+
 
 
 
@@ -208,6 +206,16 @@ public class OptimizeTest {
         // TestUtils.noErrors(result.getReports());
         TestUtils.noErrors(result);
     }
+
+
+    // import dot linked compound operations
+    @Test
+    public void MethodCallWithArrayArgumentTest () {
+        var result = TestUtils.optimize(SpecsIo.getResource("fixtures/public/cp2/MethodCallWithArrayArgument.jmm"));
+        // TestUtils.noErrors(result.getReports());
+        TestUtils.noErrors(result);
+    }
+
 
      // import dot linked compound operations
     @Test
