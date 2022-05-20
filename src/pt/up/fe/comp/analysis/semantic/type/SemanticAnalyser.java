@@ -188,7 +188,7 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         }
 
         JmmNode parentNode = node.getJmmParent().getChildren().get(0);
-        String parentType = "";
+        String parentType;
         if (parentNode.getKind().equals("ArrayAccess")) {
             parentType = "array";
         } else {
@@ -223,11 +223,16 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         String varName = node.get("name");
         String methodName = getMethodName(node);
         String varType = symbolTable.getLocalVariable(methodName, varName).getType().getName();
-        String assignedType = "";
+        String assignedType;
         if (node.getChildren().get(0).getKind().equals("ClassCreation")) {
             assignedType = node.getChildren().get(0).get("name");
         } else {
             assignedType = visit(node.getChildren().get(0), reports);
+
+            if(assignedType.equals("array") && node.getJmmChild(1).getKind().equals("ArrayAccess")) {
+                assignedType = "int";
+            }
+
         }
         if (!(symbolTable.getImports().contains(assignedType) && symbolTable.getImports().contains(varType))) {
             if (!varType.equals(assignedType)) {
