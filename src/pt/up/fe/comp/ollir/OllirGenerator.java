@@ -2,7 +2,6 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import AST.AstUtils;
-import pt.up.fe.comp.MethodBody;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
@@ -68,7 +67,7 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
                 new StatementOllirGenerator((ProgramSymbolTable) this.symbolTable,  returnNode.getJmmParent().get("name"));
 
         String instruction =  statementOllirGenerator.visit(returnNode.getJmmChild(0), 0);
-
+        codeString.append(statementOllirGenerator.getCode());
         // Two options: get return from symbol table or from return instruction
         String retType = instruction.split("\\.")[1];
         codeString.append("ret.").append(retType).append(" ").append(instruction).append(";").append("\n");

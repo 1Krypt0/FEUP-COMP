@@ -1,0 +1,26 @@
+import io;
+class Fac {
+    int a;
+
+    public int ComputeFac(int num){
+        int num_aux;
+        if (num < 1)
+            num_aux = 1;
+        else
+            num_aux = num * (this.ComputeFac(num-1));
+        return num_aux;
+    }
+
+    public int ComputeFac2(int num){
+        int b = new int[];
+        int d = 10;
+        Object c = new Object();
+        a = 10 + b[3+ d] * c.foo( c.anotherFunc(a) * 5 );
+        return a;
+    }
+
+    public static void main(String[] args){
+        io.println(new Fac().ComputeFac(10)); //assuming the existence
+        // of the classfile io.class
+    }
+}

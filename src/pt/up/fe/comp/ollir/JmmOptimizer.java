@@ -14,7 +14,10 @@ public class JmmOptimizer implements JmmOptimization {
         String code = generator.getCode();
 
         System.out.println("Optimized code:");
-        System.out.println(code);
+        // print a tab before each line
+        for (String line : code.split("\n")) {
+            System.out.println("\t" + line);
+        }
 
         return new OllirResult(semanticsResult, code, Collections.emptyList());
     }
