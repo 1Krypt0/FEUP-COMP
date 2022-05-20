@@ -1,6 +1,7 @@
 package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
+import freemarker.core.ast.Dot;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
@@ -18,28 +19,18 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         this.symbolTable = symbolTable;
         this.code = new StringBuilder();
         this.methodName = "";
-        // ASSIGN
-        // IF
-        //WHILE
-
-        // IGNORE
-        /*
-        addVisit(AstNode.Var_Decl, this::visitVarDecl);
-        addVisit(AstNode.Type, this::visitType);*/
-
 
         addVisit(AstNode.Method_Body, this::visitMethodBody);
         addVisit(AstNode.Assign, this::visitAssign);
         addVisit(AstNode.Array_Creation, this::visitArrayCreation);
         addVisit(AstNode.Class_Creation, this::visitClassCreation);
         addVisit(AstNode.Dot_Linked, this::visitDotLinked);
-
         // addVisit(AstNode.Array_Access, this::visitArrayAccess);
+
 
         /*
         addVisit(AstNode.If, this::visitIf);
         addVisit(AstNode.While, this::visitWhile);
-        addVisit(AstNode.Method_Call, this::visitMethodCall); // Does this include chained dot expressions
         */
 
         setDefaultVisit(this::visitDefault);
@@ -50,7 +41,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         System.out.println("Dot Linked");
 
         DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
-        String instruction = dotLinkedOllirGenerator.visit(jmmNode, null);
+        String instruction = dotLinkedOllirGenerator.visit(jmmNode, ".V"); // could be not null if it's an assign
 
         code.append(dotLinkedOllirGenerator.getCode());
 
@@ -59,23 +50,11 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
     }
 
     private String visitClassCreation(JmmNode classDecl, Object o) {
-        /*
-        aux1.Fac :=.Fac new(Fac).Fac;
-        invokespecial(aux1.Fac,"<init>", 2).V;
-        */
         String className = classDecl.get("name");
         return "new(" + className + ")." + className;
     }
 
     private String visitArrayCreation(JmmNode arrayCreationNode, Object o) {
-
-        /*
-            int[] c = new int[A.length];
-
-            simplest case is int[] c = new int[2];
-            goes to:
-            c.array.i32 :=.array.i32 new(array, 2.i32).array.i32
-         */
 
         JmmNode arrayAccessNode = arrayCreationNode.getChildren().get(0); // This is the BinOp that has the length of the array
         JmmNode arrayAccessOperationNode = arrayAccessNode.getChildren().get(0); // This is the array
@@ -96,7 +75,6 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitMethodBody(JmmNode jmmNode, Object integer) {
 
         this.methodName = jmmNode.getJmmParent().get("name");
-        // Should we start the parse here?
 
         for (JmmNode child : jmmNode.getChildren()) {
             visit(child, null); // TODO: should we use code.append here ?
@@ -105,43 +83,12 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         return "";
     }
 
-    private String visitDefault(JmmNode jmmNode, Object integer) {
-        System.out.println("Not implemented: " + jmmNode.getKind());
-        return "";
-    }
-
     private String visitArrayAccess(JmmNode jmmNode, Object integer) {
-        return "";
-    }
-
-
-
-    private String visitMethodCall(JmmNode jmmNode, Object integer) {
-        return "";
-    }
-
-    private String visitWhile(JmmNode jmmNode, Object integer) {
-        return "";
-    }
-
-    private String visitIf(JmmNode jmmNode, Integer integer) {
         return "";
     }
 
     private String visitAssign(JmmNode assignNode, Object integer) {
         System.out.println("Visiting assign");
-
-        /*
-        In the compiler you are expected to develop, method invocation from imported classes can only be used in statements with direct assignment (e.g.,a = M.f();, a=m1.g();)
-         or as simple call statements, i.e.,without assignment (e.g., M.f2(); , m1.g();).
-        Calls to methods declared inside the class can only appear in compounded operation (e.g, a = b * this.m(10,20), where "m” is declared inside the class).
-        */
-
-        // methodCall/DotExpression (length, this, or call)
-        // arrayAccess in left side
-        // a field (getFields method) both sides
-        // ! operator (not)
-
 
         String variableName = assignNode.get("name");
         Symbol variableSymbol = ((ProgramSymbolTable) symbolTable).getLocalVariable(this.methodName, variableName);
@@ -160,47 +107,87 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
             String instruction = visit(assignedNode, null);
             assignmentGenerator(variable, assignedNode, instruction);
             String className =  assignedNode.get("name");
-            code.append("invokespecial(" + variable + ", \"<init>\").V;\n");
+            code.append("invokespecial(").append(variable).append(", \"<init>\").V;\n");
         }
 
-
-        // BinOp takes care of a BinOp, a literal, an ID (unless it's a this.)
-        // Should it? It has the necessary visitors for its own operations, but should it take care of Direct access nodes?
-
-
-        // Should it handle a method call YES PLEASE int[] C = new int[A.length <- This is a BINOP? NO, BUT SHOULD ];
-        // Should it handle an array access
-        // Should it handle an array creation NO I GUESS
-        // Should it handle a class creation NO I GUESS
-        // and WTF happens in a ! operator?
-
-        // TODO: separate this in a AssignmentVisitor, and a BinOpVisitor or at least another visit,
-        // Should we go back and have an Expression Node and an Expression Visitor?
-        if(assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral") || assignedNode.getKind().equals("ID")) {
+        if(assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral")) {
             String instruction = binOpOllirGenerator.visit(assignedNode, null);
             System.out.println("Instruction: " + instruction);
             code.append(binOpOllirGenerator.getCode());
             assignmentGenerator(variable, assignedNode, instruction);
         }
 
+
+        if(assignedNode.getKind().equals("ID")){
+            String instruction = binOpOllirGenerator.visit(assignedNode, null);
+            System.out.println("Instruction: " + instruction);
+            code.append(binOpOllirGenerator.getCode());
+            assignmentGenerator(variable, assignedNode, instruction);
+        }
+
+        /*if(assignedNode.getKind().equals("ArrayAccess")) {
+            ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+            String instruction = arrayAccessOllirGenerator.visit(assignedNode, null);
+            code.append(arrayAccessOllirGenerator.getCode());
+            assignmentGenerator(variable, assignedNode, instruction);
+        }*/
+
+        /*if(assignedNode.getKind().equals("DotLinked")) {
+            DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+            String instruction = dotLinkedOllirGenerator.visit(assignedNode, null);
+            code.append(dotLinkedOllirGenerator.getCode());
+            assignmentGenerator(variable, assignedNode, instruction);
+        }*/
+
         return "";
     }
 
     private void assignmentGenerator(String variableCode, JmmNode assignedNode, String instruction) {
-        code.append(variableCode).append(" ").
-                append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
-                append(" ").append(instruction).append(";").append("\n");
-    }
 
-    private String visitVarDecl(JmmNode jmmNode, Integer integer) {
-        return ""; //TODO: Ignore and place in default visitor
-    }
+        if(assignedNode.getKind().equals("BinOp") || assignedNode.getKind().equals("IntegerLiteral") || assignedNode.getKind().equals("True") || assignedNode.getKind().equals("False")) {
+            code.append(variableCode).append(" ").
+                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+                    append(" ").append(instruction).append(";").append("\n");
+        }
+        else if(assignedNode.getKind().equals("ID")) {
+            String scope = OllirUtils.getVariableScope(assignedNode.get("name"), this.methodName,(ProgramSymbolTable) this.symbolTable);
+            if(scope.equals("local")) {
+                code.append(variableCode).append(" ").
+                        append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+                        append(" ").append(instruction).append(";").append("\n");
+            }
+            else if(scope.equals("argument")) {
+                code.append(variableCode).append(" ").
+                        append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+                        append(" ").append(instruction).append(";").append("\n");
+            }
+            else if(scope.equals("import")) {
 
-    private String visitType(JmmNode jmmNode, Integer integer) {
-        return "";//TODO: Ignore and place in default visitor
+            }
+            // else
+            code.append(variableCode).append(" ").
+                    append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
+                    append(" ").append(instruction).append(";").append("\n");
+
+        }
+
+
     }
 
     public String getCode() {
         return code.toString();
+    }
+
+    private String visitDefault(JmmNode jmmNode, Object integer) {
+        System.out.println("Not implemented: " + jmmNode.getKind());
+        return "";
+    }
+
+    private String visitWhile(JmmNode jmmNode, Object integer) {
+        return "";
+    }
+
+    private String visitIf(JmmNode jmmNode, Integer integer) {
+        return "";
     }
 }
