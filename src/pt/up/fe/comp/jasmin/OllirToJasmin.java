@@ -122,12 +122,36 @@ public class OllirToJasmin {
     // invokestatic
     private String getCodeInvokeStatic(CallInstruction method){
         var code = new StringBuilder();
-
+        //method.show();
         code.append("invokestatic ");
+
+        var methodClass = ((Operand) method.getFirstArg()).getName();
+
+        code.append(getFullyQualifiedName(methodClass));
+        code.append("/");
+
+        // Warning:
+        // .getLiteral() pelos vistos da return com aspas "" entre o que queremos, ent usei um substring para as
+        // retirar. Not sure se isto acontece sempre, talvez temos de ter outra maneira de solucionar, porque senao
+        // estariamos a remover partes legit do SecondArg do method.
+        var calledMethod = ((LiteralElement) method.getSecondArg()).getLiteral();
+        code.append(calledMethod.substring(1, calledMethod.length() - 1));
+
+        code.append("(");
+        // method.getListOfOperands();
+        for(var operand : method.getListOfOperands()){
+            getArgumentCode(operand);
+        }
+        code.append(")");
+        code.append(getJasminType(method.getReturnType()));
+        code.append("\n");
 
         return code.toString();
     }
 
+    private void getArgumentCode(Element operand){
+        throw new NotImplementedException(this);
+    }
     // ------- END: Individual method type functions (cases from above function) -------
 
 
