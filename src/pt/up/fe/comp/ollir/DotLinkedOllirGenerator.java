@@ -6,117 +6,153 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
+import java.util.Objects;
+
 /*
     Some examples:
     this.testFoo2(1, 1 + c).testFoo3(a);
     b.length;
-    io.println(c, d);
+    io.println(c, d); -> Should take care of the return type, void if not assigned (static/imported)
  */
-
-
-
 public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
 
     final StringBuilder code;
-    final ProgramSymbolTable table;
+    final ProgramSymbolTable symbolTable;
     final String methodName;
 
     public DotLinkedOllirGenerator(ProgramSymbolTable symbolTable, String methodName) {
-        this.table = symbolTable;
+        this.symbolTable = symbolTable;
         this.code = new StringBuilder();
         this.methodName = methodName;
 
         addVisit(AstNode.Dot_Linked, this::visitDotLinked);
-        addVisit(AstNode.ID, this::visitId);
         addVisit(AstNode.Method_Call, this::visitMethodCall);
-        addVisit(AstNode.This, this::visitThis);
-        addVisit(AstNode.Length, this::visitLength);
-
         setDefaultVisit(this::defaultVisit);
-
     }
 
-    private String visitDotLinked(JmmNode jmmNode, Object hasObject) {
+
+    private String visitMethodCall(JmmNode methodCall, Object hasReturnType) {
+        /* Parses arguments and return type*/
+        String methodName = methodCall.get("name");
+        Type returnType = symbolTable.getReturnType(methodName);
+
+        ArgumentsOllirGenerator argumentsOllirGenerator = new ArgumentsOllirGenerator(this.symbolTable, this.methodName);
+        String args = argumentsOllirGenerator.visit(methodCall, 1);
+
+        code.append(argumentsOllirGenerator.getCode());
+
+        /*if(hasReturnType != null) {
+            String returnTypeCode = (returnType == null) ? ".V" : "." + OllirUtils.getCode(returnType);
+            return args + ")" + returnTypeCode + ";\n";
+        }*/
+        return args + ");\n";
+    }
+
+
+    private String visitDotLinked(JmmNode dotLinkedNode, Object returnType) {
 
         // TODO: the inside of invoke changes but could be parsed separately
 
-        JmmNode caller = jmmNode.getJmmChild(0);
-        JmmNode callee = jmmNode.getJmmChild(1);
+        JmmNode caller = dotLinkedNode.getJmmChild(0);
+        JmmNode callee = dotLinkedNode.getJmmChild(1);
 
-        String returnTypeCode = "";
-        String args = "";
-        if (callee.getKind().equals("MethodCall")) {
-            String methodName = callee.get("name");
-            Type returnType = table.getReturnType(methodName);
+        String caller_var = "";
+        int argumentPosition;
+        Type variableType = null;
 
-            ArgumentsOllirGenerator argumentsOllirGenerator = new ArgumentsOllirGenerator(table, this.methodName);
-            args = argumentsOllirGenerator.visit(callee, 1);
-
-            code.append(argumentsOllirGenerator.getCode());
-
-            if(returnType != null) {
-                returnTypeCode = "." + OllirUtils.getCode(returnType);
-            }
-            else{
-                returnTypeCode = ".V";
-            }
+        if(caller.getKind().equals("DotLinked")){
+            variableType = new Type(symbolTable.getClassName(), false);
+            String type = symbolTable.getClassName();
+            caller_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + type;
+            String instruction = visit(caller, null);
+            code.append(caller_var).append(" :=.").append(symbolTable.getClassName()).append(" ").append(instruction);
         }
-        else if (callee.getKind().equals("Length")) {
-            // TODO: length
-        }
+        else if (caller.getKind().equals("ID")){
 
-        if (caller.getKind().equals("This")) {
-            // visit args with Visitor and build the string and auxiliary code
-            return "invokevirtual(this, \"" + methodName + "\"" + args + ")" +  returnTypeCode  +  ";\n";
-
-        } else if (caller.getKind().equals("ID")) {
-            // Find in symbol table the id
-            // Could be a field, a new Class or an import
-            // how to parse multiple imports
             String name = caller.get("name");
-            // Is this valid if import is package.a.b.c, and a int a exists?
-            // How can we concatenate the dotLink of Ids up?
-            boolean isImport = table.isSubStringOfAnImport(name);
-            boolean isLocalVariableClassType = table.isLocalVariableObjectClassType(name, this.methodName);
-            boolean isField = table.isField(name);
 
-
-            // cascade id
-
-            if (isImport) {
-                // static
-                return "invokestatic(" + name +  ", \"" + methodName + "\"" + args + ")" + returnTypeCode + ";" + "\n"; // always void
-            } else if (isLocalVariableClassType) {
-                // virtual with variable name
-            } else if (isField) {
-                // check type
+            // search through scopes
+            if(symbolTable.isLocalVariable(name, methodName)){
+                 variableType = symbolTable.getLocalVariableType(name, this.methodName);
+                 caller_var = name + "." + OllirUtils.getCode(variableType);
+                 /* if(Objects.equals(variableType.getName(), this.symbolTable.getClassName())){
+                    caller_var = name + "." + OllirUtils.getCode(variableType);
+                } else if(this.symbolTable.isImport(variableType.getName())){
+                    caller_var = name + "." + OllirUtils.getCode(variableType);
+                } else if(variableType.isArray()){
+                    caller_var = name + "." + OllirUtils.getCode(variableType);
+                }*/
             }
-        } else if (caller.getKind().equals("DotLinked")) {
-            visit(caller, null);
+            else if((argumentPosition = symbolTable.getArgumentPosition(name, methodName)) != -1){
+                variableType = symbolTable.getArgumentType(name, methodName);
+                String argumentType = OllirUtils.getCode(variableType);
+                caller_var = "$" + argumentPosition + name + "." + argumentType;
+            }
+            else if(symbolTable.isField(name)){
+                variableType = symbolTable.getFieldType(name);
+                String fieldTypeCode = OllirUtils.getCode(variableType);
+                caller_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + fieldTypeCode; // SHOULD THIS BE THE NAME OF THE FIELD?
+                String instruction = caller_var + " :=." + fieldTypeCode + " getfield(this," + name + "." + fieldTypeCode + ")" + "." + fieldTypeCode +  ";\n";
+                code.append(instruction);
+                // if type import
+                // if type is class type
+                // if array
+            }
+            else if(symbolTable.isImport(name) || symbolTable.getClassName().equals(name)){
+                caller_var = name;
+                variableType = new Type("Static Import", false);
+            }
+        } else if(caller.getKind().equals("ClassCreation")){
+            String className = caller.get("name");
+            variableType = new Type(className, false);
+            caller_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + className;
+            code.append(caller_var).append(".").append(className).append(" :=.").append(className).append(" new(").append(className).append(").").append(className).append(";\n");
+            code.append("invokespecial(").append(caller_var).append(", \"<init>\").V;\n");
+
+        } else if(caller.getKind().equals("This")){
+            // SHOULD THIS BE STORED IN A TEMPORARY VARIABLE?
+            caller_var = "this";
+            variableType = new Type(symbolTable.getClassName(), false);
         }
 
+        // TODO: Implement Negation
+
+        if(callee.getKind().equals("MethodCall")){
+            String methodName = callee.get("name");
+            ArgumentsOllirGenerator argumentsOllirGenerator = new ArgumentsOllirGenerator(symbolTable, this.methodName);
+            code.append(argumentsOllirGenerator.getCode());
+            String argsString = argumentsOllirGenerator.visit(callee, 1);
+            String returnTypeCode;
+
+            if(symbolTable.isMethod(methodName)){
+                returnTypeCode = "." + OllirUtils.getCode(symbolTable.getReturnType(methodName));
+            } else {
+                returnTypeCode = (returnType == null) ? ".V" : ( (returnType instanceof String) ? (String) returnType : null );
+            }
+
+            String invoke = (variableType.getName() != null || variableType.getName().contains("Static")) ? "invokestatic" : "invokevirtual";
+            return invoke + "(" + caller_var + ",\"" + methodName + "\""  + argsString + ")" + returnTypeCode + ";\n";
+        }
+        else if (callee.getKind().equals("Length")){
+            return "arraylength(" + caller_var + ").i32;\n";
+        } else if (callee.getKind().equals("ArrayAccess")){
+            // TODO: use caller variable and compound []
+        }
+
+
+        /*
+        // DOES THIS EXIST IN OLLIR?
+        else if (callee.getKind().equals("ID")){
+            // ( this.varOfSameClassType ) .foo() or varOfSameClassType.a
+        }
+         */
+
         return "";
     }
 
-    private String visitLength(JmmNode jmmNode, Object o) {
-        return "";
-    }
-
-    private String visitThis(JmmNode jmmNode, Object o) {
-        return "";
-    }
-
-    private String visitMethodCall(JmmNode jmmNode, Object o) {
-        return "";
-    }
-
-    private String visitId(JmmNode jmmNode, Object o) {
-        return "";
-    }
 
     public String defaultVisit(JmmNode jmmNode, Object o) {
         System.out.println("Not implemented: " + jmmNode.getKind());
-
         return "";
     }
 
