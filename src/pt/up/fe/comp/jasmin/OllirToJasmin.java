@@ -1,7 +1,11 @@
 package pt.up.fe.comp.jasmin;
 
-import org.specs.comp.ollir.ClassUnit;
+import org.specs.comp.ollir.*;
 import pt.up.fe.specs.util.SpecsIo;
+import pt.up.fe.specs.util.classmap.FunctionClassMap;
+import pt.up.fe.specs.util.exceptions.NotImplementedException;
+
+import java.util.stream.Collectors;
 
 public class OllirToJasmin {
 
@@ -87,7 +91,6 @@ public class OllirToJasmin {
         return code.toString();
 
     }
-}
 
     public String getCode(Instruction method){
 
@@ -150,3 +153,4 @@ public class OllirToJasmin {
             throw new NotImplementedException(type);
         }
     }
+}
