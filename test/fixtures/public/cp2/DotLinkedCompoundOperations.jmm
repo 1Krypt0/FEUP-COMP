@@ -1,0 +1,34 @@
+import io;
+import somepackage.M;
+
+
+class Test {
+
+    Test private_field;
+    M private_package_field;
+
+	public static void main(String[] args) {
+
+	}
+
+	public int foo() {
+        Test a;
+        int x;
+
+        x = 2;
+        a.intermediateMethod(x).bar(x);
+
+		return 0;
+	}
+
+
+	public int bar(int x) {
+        return x;
+    }
+
+    public Test intermediateMethod(int x) {
+         return new Test();
+    }
+
+
+}

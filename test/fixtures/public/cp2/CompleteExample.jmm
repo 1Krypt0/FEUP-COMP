@@ -1,0 +1,78 @@
+import MathUtils;
+import io;
+
+class Example {
+    int _x;
+
+    public int test_fields() {
+        int x;
+        _x = 3;
+        x = _x;
+        return 8;
+    }
+
+    public int test_compound_return() {
+        return 10 * 20 - 30 / 5;
+    }
+
+    public Example ex() {
+        Example ex2;
+        ex2 = new Example();
+        io.println(69420);
+        return ex2;
+    }
+
+    public static void main(String[] args) {
+        int x;
+        int y;
+        int[] a;
+        boolean b;
+        Example ex1;
+
+        x = 0;
+        io.println(x); // 0
+        x = 10 - 9 + 8 * 7 / 6;
+        io.println(x); // 10
+        x = args.length + 20;
+        io.println(x); // 20
+        b = false;
+        //io.println(b); // false
+        b = 1 < x;
+        //io.println(b); // true
+        b = b && b;
+        //io.println(b); // true
+        b = !b;
+        //io.println(b); // false
+        b = b && !b;
+        //io.println(b); // false
+        b = !((1 < x) && ((10 * 15 - 87) < x));
+        //io.println(b); // true
+        a = new int[15];
+        x = a.length;
+        io.println(x); // 15
+        ex1 = new Example();
+        ex1.ex().ex().ex().ex(); // 69420 69420 69420 69420
+        x = ex1.test_fields();
+        io.println(x); // 8
+        a[0] = 1;
+        a[1] = 2;
+        x = a[0];
+        io.println(x); // 1
+        x = a[1];
+        io.println(x); // 2
+        x = 5;
+        y = 6;
+        a[0] = x;
+        io.println(a[0]); // 5
+        a[1] = y;
+        io.println(a[1]); // 6
+        x = a[0] + a[1];
+        io.println(x); // 11
+        io.println(a[0 + 1]); // 6
+        io.println(ex1.test_fields() - 8); // 5
+        io.println(new Example().ex().test_fields()); // 8
+        io.println(new int[6].length); // 6
+        x = MathUtils.random(3, 3);
+        io.println(x); // 3
+    }
+}
