@@ -64,8 +64,6 @@ public class OllirToJasmin {
         var code = new StringBuilder();
 
         code.append(".method public ");
-        // Talvez falte um IF aqui para caso seja default (??)
-        // Timestamp: 3h 43m 20s
         if (method.isStaticMethod()){
             code.append("static ");
         }
@@ -84,8 +82,6 @@ public class OllirToJasmin {
             code.append(getCode(inst));
         }
 
-        // Warning: Might be usefull to use this .return
-        // Timestamp: Video 2 | 1 minute mark
         code.append("return\n.end method\n\n");
 
         return code.toString();
@@ -107,7 +103,6 @@ public class OllirToJasmin {
          */
     }
     public String getCode(CallInstruction method){
-        // Correct name? (.getInvocationType())
         switch(method.getInvocationType()){
             case invokestatic:
                 return getCodeInvokeStatic(method);
@@ -116,8 +111,6 @@ public class OllirToJasmin {
                 throw new NotImplementedException(method.getInvocationType());
         }
     }
-
-    // ------- START: Individual method type functions (cases from above function) -------
 
     // invokestatic
     private String getCodeInvokeStatic(CallInstruction method){
