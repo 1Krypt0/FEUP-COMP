@@ -1,0 +1,28 @@
+import io;
+
+class Test {
+
+
+    int[] field_array;
+
+	public static void main(String[] args) {
+
+	}
+
+	public int foo(int[] arg_array) {
+		int[] a;
+		int x;
+		x = 1;
+
+		a = new int[10];
+		// field_array = new int[10];
+
+
+        x = a[0];
+        //x = a[1 + x];
+        //x = arg_array[0];
+        //x = field_array[0];
+
+        return x;
+	}
+}
