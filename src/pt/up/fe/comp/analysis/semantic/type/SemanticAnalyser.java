@@ -1,7 +1,6 @@
 package pt.up.fe.comp.analysis.semantic.type;
 
 import AST.AstNode;
-import pt.up.fe.comp.analysis.semantic.SemanticAnalyser;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.PreorderJmmVisitor;
@@ -13,11 +12,11 @@ import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, String> implements SemanticAnalyser {
+public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
     private final List<Report> reports;
     private final ProgramSymbolTable symbolTable;
 
-    public BooleanConditionAnalyser(ProgramSymbolTable symbolTable) {
+    public SemanticAnalyser(ProgramSymbolTable symbolTable) {
         reports = new ArrayList<>();
         this.symbolTable = symbolTable;
         addVisit(AstNode.I_D, this::visitIDs);
@@ -51,13 +50,9 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
             // And the method is unknown
             if (!symbolTable.getMethods().contains(calledMethodName)) {
                 if (symbolTable.getSuper() == null) {
-                    reports.add(new Report(
-                            ReportType.ERROR,
-                            Stage.SEMANTIC,
-                            Integer.parseInt(node.get("line")),
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                             Integer.parseInt(node.get("col")),
-                            "Undeclared method in class " + symbolTable.getClassName()
-                    ));
+                            "Undeclared method in class " + symbolTable.getClassName()));
                     return "";
                 } else {
                     return "extends";
@@ -104,11 +99,8 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
             return symbol.getType().isArray() ? "array" : symbol.getType().getName();
         }
 
-        reports.add(new Report(ReportType.ERROR,
-                Stage.SEMANTIC,
-                Integer.parseInt(node.get("line")),
-                Integer.parseInt(node.get("col")),
-                "Variable " + name + " does not " + "exist"));
+        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                Integer.parseInt(node.get("col")), "Variable " + name + " does not " + "exist"));
 
         return "";
     }
@@ -116,8 +108,7 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
     private String visitBooleans(JmmNode node, List<Report> reports) {
         String opType = visit(node.getChildren().get(0), reports);
         if (!opType.equals("boolean")) {
-            reports.add(new Report(ReportType.ERROR,
-                    Stage.SEMANTIC,
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
                     Integer.parseInt(node.getChildren().get(0).get("line")),
                     Integer.parseInt(node.getChildren().get(0).get("col")),
                     "Expression must evaluate to value of type bool"));
@@ -144,24 +135,19 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
 
         // Check if operations are between objects of the same type
         if (!leftOperandType.equals(rightOperandType)) {
-            reports.add(new Report(ReportType.ERROR,
-                    Stage.SEMANTIC,
-                    Integer.parseInt(rightOperand.get("line")),
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(rightOperand.get("line")),
                     Integer.parseInt(rightOperand.get("col")),
-                    "Type mismatch in operation. Can't match " + leftOperandType + " and " + rightOperandType
-            ));
+                    "Type mismatch in operation. Can't match " + leftOperandType + " and " + rightOperandType));
         }
 
-        // TODO: 5/18/22 Figure out in what conditions this would be useful 
+        // TODO: 5/18/22 Figure out in what conditions this would be useful
         /*
-        if (!leftOperandType.equals("int") || !rightOperandType.equals("int")) {
-            reports.add(new Report(ReportType.ERROR,
-                    Stage.SEMANTIC,
-                    Integer.parseInt(rightOperand.get("line")),
-                    Integer.parseInt(rightOperand.get("col")),
-                    "Operation must be between integers. Can't match " + leftOperandType + " and " + rightOperandType
-            ));
-        }
+         * if (!leftOperandType.equals("int") || !rightOperandType.equals("int")) {
+         * reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
+         * Integer.parseInt(rightOperand.get("line")),
+         * Integer.parseInt(rightOperand.get("col")),
+         * "Operation must be between integers. Can't match " + leftOperandType +
+         * " and " + rightOperandType )); }
          */
 
         node.put("type", leftOperandType);
@@ -172,11 +158,8 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
         String opType = visit(node.getChildren().get(0), reports);
 
         if (!opType.equals("boolean")) {
-            reports.add(new Report(ReportType.ERROR,
-                    Stage.SEMANTIC,
-                    Integer.parseInt(node.get("line")),
-                    Integer.parseInt(node.get("col")),
-                    "! Operator can only be used on boolean values"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                    Integer.parseInt(node.get("col")), "! Operator can only be used on boolean values"));
         }
 
         node.put("type", "boolean");
@@ -192,9 +175,7 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
         String expressionType = visit(node.getChildren().get(0), reports);
 
         if (!expressionType.equals("int")) {
-            reports.add(new Report(ReportType.ERROR,
-                    Stage.SEMANTIC,
-                    Integer.parseInt(node.get("line")),
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                     Integer.parseInt(node.get("col")),
                     "Invalid array access with expression of type " + expressionType));
         }
@@ -208,11 +189,8 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
         }
 
         if (!parentType.equals("array")) {
-            reports.add(new Report(ReportType.ERROR,
-                    Stage.SEMANTIC,
-                    Integer.parseInt(node.get("line")),
-                    Integer.parseInt(node.get("col")),
-                    "Trying to access object of type " + parentType));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                    Integer.parseInt(node.get("col")), "Trying to access object of type " + parentType));
         }
 
         node.put("type", "int");
@@ -226,9 +204,7 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
 
         if (!expressionType.equals("extends") && !expressionType.equals("import")) {
             if (!expressionType.equals(methodReturnType)) {
-                reports.add(new Report(ReportType.ERROR,
-                        Stage.SEMANTIC,
-                        Integer.parseInt(node.get("line")),
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                         Integer.parseInt(node.get("col")),
                         "Invalid return type. Expected " + methodReturnType + " and got " + expressionType));
             }
@@ -250,9 +226,7 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
             if (!varType.equals(assignedType)) {
                 String classExtension = getClassExtension(node);
                 if (!assignedType.equals(classExtension)) {
-                    reports.add(new Report(ReportType.ERROR,
-                            Stage.SEMANTIC,
-                            Integer.parseInt(node.get("line")),
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                             Integer.parseInt(node.get("col")),
                             "Invalid assignment of type " + assignedType + " to variable of type " + varType));
                 }
@@ -268,7 +242,6 @@ public class BooleanConditionAnalyser extends PreorderJmmVisitor<List<Report>, S
         return "";
     }
 
-    @Override
     public List<Report> getReports() {
         return reports;
     }
