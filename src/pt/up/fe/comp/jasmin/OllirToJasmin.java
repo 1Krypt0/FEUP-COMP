@@ -47,7 +47,8 @@ public class OllirToJasmin {
 
         var superQualifiedName = getFullyQualifiedName(classUnit.getSuperClass());
         code.append(".super ").append(superQualifiedName).append("\n");
-        code.append(SpecsIo.getResource("jasminConstructor.template").replace("${SUPER_NAME}", superQualifiedName));
+        code.append(SpecsIo.getResource("jasminConstructor.template").replace("${SUPER_NAME}",
+                superQualifiedName)).append("\n");
 
         for (var method : classUnit.getMethods()){
             code.append(getCode(method));
@@ -71,7 +72,10 @@ public class OllirToJasmin {
                 .map(element -> getJasminType(element.getType()))
                 .collect(Collectors.joining());
 
-        code.append(methodParamTypes).append(")").append(getJasminType(method.getReturnType()));
+        code.append(methodParamTypes).append(")").append(getJasminType(method.getReturnType())).append("\n");
+
+
+        code.append(".end method\n\n");
 
         return code.toString();
 
