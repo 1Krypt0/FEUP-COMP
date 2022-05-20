@@ -1,8 +1,6 @@
 import io;
 
 class Test {
-
-
     int[] field_array;
 
 	public static void main(String[] args) {
@@ -19,9 +17,9 @@ class Test {
 
 
         x = a[0];
-        //x = a[1 + x];
-        //x = arg_array[0];
-        //x = field_array[0];
+        x = a[1 + x];
+        x = arg_array[0];
+        // x = field_array[0];
 
         return x;
 	}

@@ -76,6 +76,12 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
     }
 
     private String visitIntegerLiteral(JmmNode node, Object needsVariable) {
+
+        if(needsVariable != null) {
+            String temp_var = "temp" + node.get("col") + "_" + node.get("line") + ".i32";
+            code.append(temp_var).append(" :=.i32 ").append(node.get("value")).append(".i32;\n");
+            return temp_var;
+        }
         return OllirUtils.getIntegerLiteralCode(node);
     }
 

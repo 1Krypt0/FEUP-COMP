@@ -141,13 +141,13 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         if (assignedNode.getKind().equals("ID")) {
 
-            if(assignNode.getChildren().size() == 2){
-                if (assignNode.getJmmChild(1).getKind().equals("ArrayAccess")) {
-                    ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
-                    String instruction = arrayAccessOllirGenerator.visit(assignNode, "right");
-                    code.append(arrayAccessOllirGenerator.getCode());
-                    assignmentGenerator(variable, assignedNode, instruction);
-                }
+            if(assignNode.getChildren().size() == 2 && assignNode.getJmmChild(1).getKind().equals("ArrayAccess")){
+                ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+                String instruction = arrayAccessOllirGenerator.visit(assignNode, "right");
+                code.append(arrayAccessOllirGenerator.getCode());
+                code.append(variableName).append(".i32 :=.i32 ").append(instruction).append(";\n"); //TODO: place in assigmentGenerator
+
+
             } else {
                 // BinaryOp takes care of field aswell
                 String instruction = statementOllirGenerator.visit(assignedNode, null);
@@ -175,7 +175,6 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         if (((ProgramSymbolTable) symbolTable).hasLocalVariable(this.methodName, varName)
                 || ((ProgramSymbolTable) symbolTable).getArgumentPosition(this.methodName, varName) != -1) {
-
 
             if(assignedNode.getKind().equals("DotLinked")) {
                 Type type = ((ProgramSymbolTable) symbolTable).getVariableType(varName);
