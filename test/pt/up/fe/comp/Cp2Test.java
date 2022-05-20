@@ -227,7 +227,6 @@ public class Cp2Test {
         TestUtils.noErrors(result);
     }
 
-     */
     @Test
     public void test_2_01_CompileBasic() {
         testJmmCompilation("fixtures/public/cp2/CompileBasic.jmm");
