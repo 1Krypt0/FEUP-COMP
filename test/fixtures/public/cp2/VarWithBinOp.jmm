@@ -1,0 +1,19 @@
+import io;
+
+class Test {
+
+	public static void main(String[] args) {
+
+	}
+
+	public int foo() {
+		int x;
+		int y;
+
+        x = (1 + 3) / y;
+
+
+        return x;
+	}
+
+}

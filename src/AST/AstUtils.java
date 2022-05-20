@@ -26,19 +26,19 @@ public class AstUtils {
 
     public static List<Symbol> parseFields(List<JmmNode> fields) {
         // return for each field a Symbol
-        return fields.stream().map(AstUtils::parseField).collect(Collectors.toList());
+        return fields.stream().map(AstUtils::parseVarDecl).collect(Collectors.toList());
     }
 
     public static List<Symbol> parseLocalVariables(List<JmmNode> localVariables) {
-        return localVariables.stream().map(AstUtils::parseField).collect(Collectors.toList());
+        return localVariables.stream().map(AstUtils::parseVarDecl).collect(Collectors.toList());
     }
 
 
-    public static Symbol parseField(JmmNode field) {
-        SpecsCheck.checkArgument(field.getKind().equals("VarDecl"), () -> "Expected Field node, got " + field.getKind());
+    public static Symbol parseVarDecl(JmmNode varDecl) {
+        SpecsCheck.checkArgument(varDecl.getKind().equals("VarDecl"), () -> "Expected Field node, got " + varDecl.getKind());
 
-        JmmNode type = field.getChildren().get(0);
-        String typeName = field.get("name");
+        JmmNode type = varDecl.getChildren().get(0);
+        String typeName = varDecl.get("name");
         String fieldType = type.get("type");
         boolean isArray = type.getOptional("is_array").map(Boolean::parseBoolean).orElse(false);
 

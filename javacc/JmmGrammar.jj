@@ -145,7 +145,7 @@ Statement #void: (
     BlockStatement
     | WhileStatement
     | IfStatement
-    | SCAN 2 ((<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} (<OPEN_SQUARE_BRACES> Expression #ArrayAccess <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression) #Assign <SEMICOLON>)
+    | SCAN 2 ((<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} (<OPEN_SQUARE_BRACES> AndExpression #ArrayAccess <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression) #Assign <SEMICOLON>)
     | AndExpression <SEMICOLON>
     )
 ;

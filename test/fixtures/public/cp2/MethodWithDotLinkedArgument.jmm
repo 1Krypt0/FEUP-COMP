@@ -1,0 +1,41 @@
+import io;
+
+class Test {
+
+	public static void main(String[] args) {
+
+	}
+
+	public int foo() {
+		int x;
+		int y;
+		int[] arr;
+
+
+		arr = new int[this.bar(12)];
+        y = 2;
+		x = this.bar(this.intermediate().bar(14));
+        x = this.bar((new Test()).intermediate().two_args_method(14, this.bar(12)));
+
+
+        return 0;
+	}
+
+
+	public int bar(int x) {
+        return 10;
+    }
+
+
+    public Test intermediate() {
+         Test t;
+         t = new Test();
+
+         return t;
+    }
+
+    public int two_args_method(int x, int y) {
+        return 13;
+    }
+
+}
