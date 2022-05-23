@@ -229,25 +229,25 @@ public class Cp2Test {
 
     @Test
     public void test_2_01_CompileBasic() {
-        testJmmCompilation("fixtures/public/cp2/CompileBasic.jmm");
+        testJmmCompilation("fixtures/public/cp2/CompileBasic.jmm", this::ollirTest_2_01_CompileBasic);
     }
 
     @Test
     public void test_2_02_CompileArithmetic() {
-        testJmmCompilation("fixtures/public/cp2/CompileArithmetic.jmm");
+        testJmmCompilation("fixtures/public/cp2/CompileArithmetic.jmm", this::ollirTest_2_02_CompileArithmetic);
     }
 
     @Test
     public void test_2_03_CompileMethodInvocation() {
-        testJmmCompilation("fixtures/public/cp2/CompileMethodInvocation.jmm");
+        testJmmCompilation("fixtures/public/cp2/CompileMethodInvocation.jmm",
+                this::ollirTest_2_03_CompileMethodInvocation);
     }
 
     @Test
     public void test_2_04_CompileAssignment() {
-        testJmmCompilation("fixtures/public/cp2/CompileAssignment.jmm");
+        testJmmCompilation("fixtures/public/cp2/CompileAssignment.jmm", this::ollirTest_2_04_CompileAssignment);
     }
 
-    /*
     @Test
     public void test_3_01_OllirToJasminBasic() {
         testOllirToJasmin("fixtures/public/cp2/OllirToJasminBasic.ollir");
@@ -320,8 +320,11 @@ public class Cp2Test {
         assertNotNull("Could not find method " + methodName, methodFoo);
 
         var binOpInst = methodFoo.getInstructions().stream()
-                .filter(inst -> inst instanceof BinaryOpInstruction)
+                .filter(inst -> inst instanceof AssignInstruction)
+                .map(instr -> (AssignInstruction)instr)
+                .filter(assign -> assign.getRhs() instanceof BinaryOpInstruction)
                 .findFirst();
+
         assertTrue("Could not find a binary op instruction in method " + methodName, binOpInst.isPresent());
 
         var retInst = methodFoo.getInstructions().stream()
@@ -377,5 +380,4 @@ public class Cp2Test {
                 assignInst.get().getTypeOfAssign().getTypeOfElement());
     }
 
-    */
 }
