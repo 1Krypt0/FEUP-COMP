@@ -15,7 +15,32 @@ public class OllirToJasmin {
         this.classUnit = classUnit;
     }
 
+    public String getClassCode(){
+        var code = new StringBuilder();
+
+        // Class Name
+        code.append(".class public ").append(classUnit.getClassName()).append("\n");
+
+        //
+        // TODO: imports
+        //
+
+        // Super Class and Constructor
+        code.append(getClassSuperAndConstructor());
+        // Class Fields
+/*
+        // Class Methods
+        for (var method : classUnit.getMethods()){
+            code.append(getMethodCode(method));
+        }
+ */
+        return code.toString();
+    }
+
     public String getFullyQualifiedName(String className){
+        if (className == null){
+            throw new RuntimeException("Null class has no super class");
+        }
         for(var importString : classUnit.getImports()){
             var splitImports = importString.split("\\.");
 
@@ -33,34 +58,32 @@ public class OllirToJasmin {
         }
         throw new RuntimeException("Could not find import for class " + className);
     }
-    /*
-    "\r\n"
-    ".method public static main([Ljava/lang/String;)V\r\n"
-      ".limit stack 99\r\n"
-      ".limit locals 99\r\n"
-      "\r\n"
-      "invokestatic ioPlus/printHelloWorld()V\r\n"
-      "\r\n"
-      "return\r\n"
-    ".end method"
-    */
 
-    public String getCode(){
-        var code = new StringBuilder();
-        code.append(".class public ").append(classUnit.getClassName()).append("\n");
+    public String getClassSuperAndConstructor(){
+        var classCode = new StringBuilder();
 
-        var superQualifiedName = getFullyQualifiedName(classUnit.getSuperClass());
-        code.append(".super ").append(superQualifiedName).append("\n");
-        code.append(SpecsIo.getResource("jasminConstructor.template").replace("${SUPER_NAME}",
-                superQualifiedName)).append("\n");
-
-        for (var method : classUnit.getMethods()){
-            code.append(getCode(method));
+        // Super Class
+        String superClassQualifiedName;
+        var superClass = classUnit.getSuperClass();
+        if(superClass == null){
+            superClassQualifiedName = "/java/lang/object";
         }
-        return "";
+        else{
+            superClassQualifiedName = getFullyQualifiedName(superClass);
+        }
+        classCode.append(".super ").append(superClassQualifiedName).append("\n\n");
+
+        //  CONSTRUCTOR
+        classCode.append(".method public <init>()V\n");
+        classCode.append("\taload_0\n");
+        classCode.append("\tinvokenonvirtual " + superClassQualifiedName + "/<init>()V\n");
+        classCode.append("\treturn\n");
+        classCode.append(".end method\n");
+
+        return classCode.toString();
     }
 
-    public String getCode(Method method){
+    public String getMethodCode(Method method){
         var code = new StringBuilder();
 
         code.append(".method public ");
@@ -88,21 +111,14 @@ public class OllirToJasmin {
 
     }
 
-    public String getCode(Instruction method){
+    public String getInstructionCode(Instruction method){
          FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
          instructionMap.put(CallInstruction.class, this::getCode);
          instructionMap.apply(method);
         return instructionMap.apply(method);
-
-        /*
-        if(method instanceof CallInstruction){
-            return getCode((CallInstruction) method);
-        }
-
-        throw new NotImplementedException(method.getClass());
-         */
     }
-    public String getCode(CallInstruction method){
+
+    public String getCallInstructionCode(CallInstruction method){
         switch(method.getInvocationType()){
             case invokestatic:
                 return getCodeInvokeStatic(method);

@@ -65,6 +65,7 @@ public class Launcher {
         // Convert to Ollir
         var ollirResult = optimizer.toOllir(optimizedResult);
 
+        System.out.println("hello");
         // Instantiate JasminBackend
         var jasminEmitter = new JasminEmitter();
 
