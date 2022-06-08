@@ -125,6 +125,7 @@ public class OllirToJasmin {
 
         //  CONSTRUCTOR
         // TODO: use method generation function to generate this
+        classCode.append(getMethodHeader(classUnit.))
         classCode.append(".method public <init>()V\n");
         classCode.append("\taload_0\n");
         classCode.append("\tinvokenonvirtual " + superClassQualifiedName + "/<init>()V\n");
@@ -171,10 +172,9 @@ public class OllirToJasmin {
         ElementType elementType = type.getTypeOfElement();
         StringBuilder typeDescriptor = new StringBuilder();
 
-        // TODO: Can there be bidimensional arrays (or beyond)??
         if(elementType == ARRAYREF){
             // check type of array items
-            ElementType childElemType = ((ArrayType) type).getTypeOfElements();     // TODO: why is this deprecated
+            ElementType childElemType = ((ArrayType) type).getTypeOfElements();
             typeDescriptor.append("[").append(getJasminElementType(childElemType));
             return typeDescriptor.toString();
         }
@@ -249,10 +249,10 @@ public class OllirToJasmin {
 
         HashMap<String, Descriptor> methodVarTable = method.getVarTable();
 
+        // TODO: remainder of the code
         StringBuilder instructions = new StringBuilder();
         HashMap<String, Instruction> labels = method.getLabels();
 
-        // TODO: remainder of the code
         return bodyCode.toString();
     }
 
