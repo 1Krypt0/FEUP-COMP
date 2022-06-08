@@ -5,6 +5,8 @@ import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.classmap.FunctionClassMap;
 import pt.up.fe.specs.util.exceptions.NotImplementedException;
 
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
@@ -155,6 +157,18 @@ public class OllirToJasmin {
         */
     }
 
+    public String getMethodParameters(Method method){
+        StringBuilder methodParametersString = new StringBuilder();
+
+        ArrayList<Element> methodParameters = method.getParams();
+        for (Element parameter : methodParameters){
+            var parameterType = getJasminType(parameter.getType());
+            methodParametersString.append(parameterType);
+        }
+
+        return methodParametersString.toString();
+    }
+
     public String getMethodHeader(Method method){
         StringBuilder headerCode = new StringBuilder();
 
@@ -179,8 +193,8 @@ public class OllirToJasmin {
         }
 
         // TODO: parameters
-        String parameters = "params";
-        headerCode.append("(").append(parameters).append(")");
+        String methodParameters = getMethodParameters(method);
+        headerCode.append("(").append(methodParameters).append(")");
 
         // Descriptor
         String returnTypeDescriptor = getJasminType(method.getReturnType());
