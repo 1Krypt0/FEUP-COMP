@@ -43,7 +43,7 @@ public class OllirToJasmin {
 
         // Class Methods
         for (var method : classUnit.getMethods()){
-            classCode.append("\t").append(getMethodCode(method));
+            classCode.append(getMethodCode(method));
         }
 
         return classCode.toString();
