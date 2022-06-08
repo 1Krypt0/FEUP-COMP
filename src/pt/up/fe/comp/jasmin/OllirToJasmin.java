@@ -69,7 +69,7 @@ public class OllirToJasmin {
             fieldCode.append(" static");
         }
         // final field
-        if (field.isStaticField()){
+        if (field.isFinalField()){
             fieldCode.append(" final");
         }
 
