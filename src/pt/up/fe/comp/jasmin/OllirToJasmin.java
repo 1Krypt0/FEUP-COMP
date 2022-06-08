@@ -131,7 +131,7 @@ public class OllirToJasmin {
         // TODO: Can there be bidimensional arrays (or beyond)??
         if(elementType == ARRAYREF){
             // check type of array items
-            ElementType childElemType = ((ArrayType) type).getTypeOfElement();
+            ElementType childElemType = ((ArrayType) type).getTypeOfElements();     // TODO: why is this deprecated
             typeDescriptor.append("[").append(getJasminElementType(childElemType));
             return typeDescriptor.toString();
         }
