@@ -129,7 +129,6 @@ public class OllirToJasmin {
         ElementType elementType = type.getTypeOfElement();
         StringBuilder typeDescriptor = new StringBuilder();
 
-        // TODO: Array types
         // TODO: Can there be bidimensional arrays (or beyond)??
         if(elementType == ARRAYREF){
             // check type of array items
@@ -192,7 +191,6 @@ public class OllirToJasmin {
             headerCode.append(" ").append(method.getMethodName());
         }
 
-        // TODO: parameters
         String methodParameters = getMethodParameters(method);
         headerCode.append("(").append(methodParameters).append(")");
 
