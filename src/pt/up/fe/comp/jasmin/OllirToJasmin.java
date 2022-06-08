@@ -85,6 +85,7 @@ public class OllirToJasmin {
         classCode.append(".super ").append(superClassQualifiedName).append("\n\n");
 
         //  CONSTRUCTOR
+        // TODO: use method generation function to generate this
         classCode.append(".method public <init>()V\n");
         classCode.append("\taload_0\n");
         classCode.append("\tinvokenonvirtual " + superClassQualifiedName + "/<init>()V\n");
@@ -104,6 +105,7 @@ public class OllirToJasmin {
             case PROTECTED:
                 return "protected";
             case DEFAULT:
+                // TODO: fix default access modifier coming from ollir
                 //throw new RuntimeException("Unknown DEFAULT access modifier");
                 return "public";
         }
