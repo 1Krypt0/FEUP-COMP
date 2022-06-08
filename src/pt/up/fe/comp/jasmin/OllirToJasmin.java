@@ -8,6 +8,7 @@ import pt.up.fe.specs.util.exceptions.NotImplementedException;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static org.specs.comp.ollir.ElementType.ARRAYREF;
@@ -20,11 +21,12 @@ public class OllirToJasmin {
         this.classUnit = classUnit;
     }
 
+    // TODO: change access modifiers for this class's functions
     public String getClassCode(){
-        var code = new StringBuilder();
+        var classCode = new StringBuilder();
 
         // Class Name
-        code.append(".class public ").append(classUnit.getClassName()).append("\n");
+        classCode.append(".class public ").append(classUnit.getClassName()).append("\n");
 
         //
         // TODO: imports
@@ -33,18 +35,55 @@ public class OllirToJasmin {
         // Super Class and Constructor
         // TODO: separate getting super and building the constructor
         //              constructor can now be built using the standard method generation function
-        code.append(getClassSuperAndConstructor());
+        classCode.append(getClassSuperAndConstructor());
 
-        //
-        // TODO: Class Fields
-        //
+        for (Field field : classUnit.getFields()){
+            classCode.append("\t").append(getFieldCode(field)).append("\n");
+        }
 
         // Class Methods
         for (var method : classUnit.getMethods()){
-            code.append(getMethodCode(method));
+            classCode.append("\t").append(getMethodCode(method));
         }
 
-        return code.toString();
+        return classCode.toString();
+    }
+
+
+    public String getFieldCode(Field field){
+        StringBuilder fieldCode = new StringBuilder();
+
+        fieldCode.append("\t.field");
+
+        AccessModifiers fieldAccessModifier = field.getFieldAccessModifier();
+        if(fieldAccessModifier == AccessModifiers.DEFAULT){
+            throw new RuntimeException("Invalid field access modifier found");
+        }
+        else{
+            String accessModifierString = fieldAccessModifier.toString();
+            fieldCode.append(" ").append(accessModifierString.toLowerCase());
+        }
+
+        // static field
+        if (field.isStaticField()){
+            fieldCode.append(" static");
+        }
+        // final field
+        if (field.isStaticField()){
+            fieldCode.append(" final");
+        }
+
+        fieldCode.append(" ").append(field.getFieldName());
+        String fieldType = getJasminType(field.getFieldType());
+        fieldCode.append(" ").append(fieldType).append(";");
+
+        if(field.isInitialized()){
+            fieldCode.append(" = ").append(field.getInitialValue());
+        }
+
+        fieldCode.append("\n");
+
+        return fieldCode.toString();
     }
 
     public String getFullyQualifiedName(String className){
@@ -95,6 +134,7 @@ public class OllirToJasmin {
         return classCode.toString();
     }
 
+    // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
     public String getMethodAccessModifier(Method method){
         AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
         switch (methodAccessModifier){
@@ -179,7 +219,6 @@ public class OllirToJasmin {
         if (method.isStaticMethod()){
             headerCode.append(" static");
         }
-
         // final method
         if (method.isFinalMethod()){
             headerCode.append(" final");
