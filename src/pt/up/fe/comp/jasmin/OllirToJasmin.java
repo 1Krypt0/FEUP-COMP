@@ -5,7 +5,10 @@ import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.classmap.FunctionClassMap;
 import pt.up.fe.specs.util.exceptions.NotImplementedException;
 
+import java.util.HashMap;
 import java.util.stream.Collectors;
+
+import static org.specs.comp.ollir.ElementType.ARRAYREF;
 
 public class OllirToJasmin {
 
@@ -26,18 +29,24 @@ public class OllirToJasmin {
         //
 
         // Super Class and Constructor
+        // TODO: separate getting super and building the constructor
+        //              constructor can now be built using the standard method generation function
         code.append(getClassSuperAndConstructor());
-        // Class Fields
-/*
+
+        //
+        // TODO: Class Fields
+        //
+
         // Class Methods
         for (var method : classUnit.getMethods()){
             code.append(getMethodCode(method));
         }
- */
+
         return code.toString();
     }
 
     public String getFullyQualifiedName(String className){
+
         if (className == null){
             throw new RuntimeException("Null class has no super class");
         }
@@ -78,42 +87,166 @@ public class OllirToJasmin {
         classCode.append("\taload_0\n");
         classCode.append("\tinvokenonvirtual " + superClassQualifiedName + "/<init>()V\n");
         classCode.append("\treturn\n");
-        classCode.append(".end method\n");
+        classCode.append(".end method\n\n");
 
         return classCode.toString();
     }
 
-    public String getMethodCode(Method method){
-        var code = new StringBuilder();
+    public String getMethodAccessModifier(Method method){
+        AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
+        switch (methodAccessModifier){
+            case PUBLIC:
+                return "public";
+            case PRIVATE:
+                return "private";
+            case PROTECTED:
+                return "protected";
+            case DEFAULT:
+                //throw new RuntimeException("Unknown DEFAULT access modifier");
+                return "public";
+        }
+        throw new RuntimeException("Could not get access modifier for method " + method.getMethodName());
+    }
 
-        code.append(".method public ");
+    public String getJasminElementType(ElementType elementType){
+        switch (elementType) {
+            case INT32:
+                return "I";
+            case BOOLEAN:
+                return "Z";
+            case STRING:
+                return "Ljava/lang/String;";
+            case VOID:
+                return "V";
+            default:
+                throw new RuntimeException("Invalid type descriptor found");
+        }
+    }
+
+    public String getJasminType(Type type){
+        ElementType elementType = type.getTypeOfElement();
+        StringBuilder typeDescriptor = new StringBuilder();
+
+        // TODO: Array types
+        // TODO: Can there be bidimensional arrays (or beyond)??
+        if(elementType == ARRAYREF){
+            // check type of array items
+            ElementType childElemType = ((ArrayType) type).getTypeOfElement();
+            typeDescriptor.append("[").append(getJasminElementType(childElemType));
+            return typeDescriptor.toString();
+        }
+        else{
+            typeDescriptor.append(getJasminElementType(elementType));
+            return typeDescriptor.toString();
+        }
+        /*
+        // TODO: Object types
+        //if(elementType == OBJECTREF){
+        //
+        //}
+        // TODO: Class types
+        //if(elementType == CLASS){
+        //
+        //}
+        /*
+            [X......... X[] (array of X)
+            LY;........ class Y
+            (X)Y....... X->Y (method with domain = X and range = Y)
+        */
+    }
+
+    public String getMethodHeader(Method method){
+        StringBuilder headerCode = new StringBuilder();
+
+        headerCode.append(".method ").append(getMethodAccessModifier(method));
+
+        // static method
         if (method.isStaticMethod()){
-            code.append("static ");
+            headerCode.append(" static");
         }
 
-        code.append(method.getMethodName()).append("(");
-
-        var methodParamTypes = method.getParams().stream()
-                .map(element -> getJasminType(element.getType()))
-                .collect(Collectors.joining());
-
-        code.append(methodParamTypes).append(")").append(getJasminType(method.getReturnType())).append("\n");
-        code.append(".limit stack 99\n");
-        code.append(".limit locals 99\n");
-
-        for(var inst : method.getInstructions()){
-            code.append(getCode(inst));
+        // final method
+        if (method.isFinalMethod()){
+            headerCode.append(" final");
         }
 
-        code.append("return\n.end method\n\n");
+        // constructor method
+        if (method.isConstructMethod()){
+            headerCode.append(" <init>");
+        }
+        else{   // standard method
+            headerCode.append(" ").append(method.getMethodName());
+        }
 
-        return code.toString();
+        // TODO: parameters
+        String parameters = "params";
+        headerCode.append("(").append(parameters).append(")");
 
+        // Descriptor
+        String returnTypeDescriptor = getJasminType(method.getReturnType());
+        headerCode.append(returnTypeDescriptor).append("\n");
+
+        return headerCode.toString();
+    }
+
+    public String getMethodBody(Method method){
+        StringBuilder bodyCode = new StringBuilder();
+
+        // TODO: method fields
+
+        HashMap<String, Descriptor> methodVarTable = method.getVarTable();
+
+        StringBuilder instructions = new StringBuilder();
+        HashMap<String, Instruction> labels = method.getLabels();
+
+        /*
+
+        for (int i = 0; i < method.getInstructions().size(); i++) {
+            Instruction instruction = method.getInstr(i);
+            for (String symbol : labels.keySet()) {
+                if (labels.get(symbol) == instruction) {
+                    instructions.append(symbol).append(":\n");
+                }
+            }
+
+            instructions.append(generateInstruction(instruction, varTable));
+            if (instruction.getInstType() == InstructionType.CALL) {
+                if (((CallInstruction) instruction).getReturnType().getTypeOfElement() != ElementType.VOID)
+                    instructions.append("\tpop\n");
+            }
+        }
+
+
+        // TODO: remainder of the code
+
+        ArrayList<Integer> locals = new ArrayList<>();
+        for (Descriptor descriptor : varTable.values()) {
+            if (!locals.contains(descriptor.getVirtualReg()))
+                locals.add(descriptor.getVirtualReg());
+        }
+        if (!locals.contains(0) && !method.isConstructMethod())
+            locals.add(0);
+
+        bodyCode.append(instructions);
+
+        if (method.isConstructMethod())
+            bodyCode.append("\treturn\n");
+
+        */
+        return bodyCode.toString();
+    }
+
+    public String getMethodCode(Method method){
+        var methodCode = new StringBuilder();
+        methodCode.append(getMethodHeader(method));
+        methodCode.append(getMethodBody(method));
+        methodCode.append(".end method\n\n");
+        return methodCode.toString();
     }
 
     public String getInstructionCode(Instruction method){
          FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
-         instructionMap.put(CallInstruction.class, this::getCode);
+         //instructionMap.put(CallInstruction.class, this::getCode);
          instructionMap.apply(method);
         return instructionMap.apply(method);
     }
@@ -162,25 +295,4 @@ public class OllirToJasmin {
         throw new NotImplementedException(this);
     }
     // ------- END: Individual method type functions (cases from above function) -------
-
-
-    public String getJasminType(Type type){
-        if (type instanceof ArrayType){
-            return "[" + getJasminType(((ArrayType) type).getTypeOfElements());
-        }
-
-        return getJasminType(type.getTypeOfElement());
-
-    }
-
-    public String getJasminType(ElementType type){
-        switch(type){
-        case STRING:
-            return "Ljava/lang/String;";
-        case VOID:
-            return "V";
-        default:
-            throw new NotImplementedException(type);
-        }
-    }
 }
