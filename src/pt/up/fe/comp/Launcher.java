@@ -62,7 +62,7 @@ public class Launcher {
         JmmSemanticsResult optimizedResult = optimizer.optimize(analysisResult);
         TestUtils.noErrors(optimizedResult);
 
-        System.out.println("\n\n--------------JASMINCODE--------------\n");
+        System.out.println("\n\n--------------OLLIR CODE--------------\n");
         // Convert to Ollir
         var ollirResult = optimizer.toOllir(optimizedResult);
         System.out.println("--------------------------------------\n");
@@ -70,7 +70,7 @@ public class Launcher {
         // Instantiate JasminBackend
         var jasminEmitter = new JasminEmitter();
 
-        System.out.println("\n\n--------------JASMINCODE--------------\n");
+        System.out.println("\n\n--------------JASMIN CODE--------------\n");
         // Convert to jasmin
         var jasminResult = jasminEmitter.toJasmin(ollirResult);
         System.out.println("--------------------------------------\n");

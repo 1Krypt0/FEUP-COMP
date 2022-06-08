@@ -252,40 +252,7 @@ public class OllirToJasmin {
         StringBuilder instructions = new StringBuilder();
         HashMap<String, Instruction> labels = method.getLabels();
 
-        /*
-
-        for (int i = 0; i < method.getInstructions().size(); i++) {
-            Instruction instruction = method.getInstr(i);
-            for (String symbol : labels.keySet()) {
-                if (labels.get(symbol) == instruction) {
-                    instructions.append(symbol).append(":\n");
-                }
-            }
-
-            instructions.append(generateInstruction(instruction, varTable));
-            if (instruction.getInstType() == InstructionType.CALL) {
-                if (((CallInstruction) instruction).getReturnType().getTypeOfElement() != ElementType.VOID)
-                    instructions.append("\tpop\n");
-            }
-        }
-
-
         // TODO: remainder of the code
-
-        ArrayList<Integer> locals = new ArrayList<>();
-        for (Descriptor descriptor : varTable.values()) {
-            if (!locals.contains(descriptor.getVirtualReg()))
-                locals.add(descriptor.getVirtualReg());
-        }
-        if (!locals.contains(0) && !method.isConstructMethod())
-            locals.add(0);
-
-        bodyCode.append(instructions);
-
-        if (method.isConstructMethod())
-            bodyCode.append("\treturn\n");
-
-        */
         return bodyCode.toString();
     }
 
@@ -296,6 +263,9 @@ public class OllirToJasmin {
         methodCode.append(".end method\n\n");
         return methodCode.toString();
     }
+
+    // ------------------------------------------   OLD CODE ------------------------
+    /*
 
     public String getInstructionCode(Instruction method){
          FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
@@ -348,4 +318,5 @@ public class OllirToJasmin {
         throw new NotImplementedException(this);
     }
     // ------- END: Individual method type functions (cases from above function) -------
+     */
 }
