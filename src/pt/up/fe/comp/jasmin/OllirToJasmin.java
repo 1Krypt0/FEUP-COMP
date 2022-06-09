@@ -35,7 +35,7 @@ public class OllirToJasmin {
         // Super Class and Constructor
         // TODO: separate getting super and building the constructor
         //              constructor can now be built using the standard method generation function
-        classCode.append(getClassSuperAndConstructor());
+        classCode.append(getClassSuper());
 
         for (Field field : classUnit.getFields()){
             classCode.append("\t").append(getFieldCode(field)).append("\n");
@@ -109,7 +109,7 @@ public class OllirToJasmin {
         throw new RuntimeException("Could not find import for class " + className);
     }
 
-    public String getClassSuperAndConstructor(){
+    public String getClassSuper(){
         var classCode = new StringBuilder();
 
         // Super Class
@@ -123,21 +123,13 @@ public class OllirToJasmin {
         }
         classCode.append(".super ").append(superClassQualifiedName).append("\n\n");
 
-        //  CONSTRUCTOR
-        // TODO: use method generation function to generate this
-        classCode.append(getMethodHeader(classUnit.))
-        classCode.append(".method public <init>()V\n");
-        classCode.append("\taload_0\n");
-        classCode.append("\tinvokenonvirtual " + superClassQualifiedName + "/<init>()V\n");
-        classCode.append("\treturn\n");
-        classCode.append(".end method\n\n");
-
         return classCode.toString();
     }
 
     // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
     public String getMethodAccessModifier(Method method){
         AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
+        System.out.println(method.getMethodName() + "     |      " + methodAccessModifier);
         switch (methodAccessModifier){
             case PUBLIC:
                 return "public";
@@ -146,7 +138,6 @@ public class OllirToJasmin {
             case PROTECTED:
                 return "protected";
             case DEFAULT:
-                // TODO: fix default access modifier coming from ollir
                 //throw new RuntimeException("Unknown DEFAULT access modifier");
                 return "public";
         }
@@ -246,7 +237,6 @@ public class OllirToJasmin {
         StringBuilder bodyCode = new StringBuilder();
 
         // TODO: method fields
-
         HashMap<String, Descriptor> methodVarTable = method.getVarTable();
 
         // TODO: remainder of the code
