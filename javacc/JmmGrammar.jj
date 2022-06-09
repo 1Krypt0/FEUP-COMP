@@ -162,9 +162,9 @@ IfStatement #void:
     <OPEN_PAREN>
         AndExpression
     <CLOSE_PAREN>
-        (Statement) #IfStatement) #If)
+        (Statement) #IfStatement)
     ((<ELSE>
-        Statement)? #Else)  ;
+        Statement)? #Else)) #If ;
 
 //DOUBT: is this void or do we need some general block for the while, to collect condition and statement
 WhileStatement #void:

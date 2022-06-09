@@ -9,6 +9,8 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
+import java.util.List;
+
 public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
     private final SymbolTable symbolTable;
@@ -29,13 +31,61 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         // addVisit(AstNode.Array_Access, this::visitArrayAccess);
 
 
-        /*
+
         addVisit(AstNode.If, this::visitIf);
+
+        /*
         addVisit(AstNode.While, this::visitWhile);
         */
 
         setDefaultVisit(this::visitDefault);
     }
+
+
+
+    private String visitIf(JmmNode jmmNode, Object o) {
+        System.out.println("Visiting if");
+        JmmNode condition = jmmNode.getJmmChild(0);
+        JmmNode if_block = jmmNode.getJmmChild(1).getJmmChild(0);
+        JmmNode else_node = jmmNode.getJmmChild(2);
+
+        // condition
+        StatementOllirGenerator conditionGenerator =
+                new StatementOllirGenerator((ProgramSymbolTable) this.symbolTable, methodName);
+        String instruction = conditionGenerator.visit(condition);
+        this.code.append(conditionGenerator.getCode());
+
+        this.code.append("if( ").append(instruction).append(" ) goto if_body;\n");
+        if(!else_node.getChildren().isEmpty()){
+            JmmNode else_block = else_node.getJmmChild(0);
+            for (JmmNode else_statement : else_block.getChildren())
+            {
+                visit(else_statement);
+            }
+        }
+        this.code.append("goto endif;\n");
+        this.code.append("if_body:\n");
+        for (JmmNode if_statement : if_block.getChildren()) visit(if_statement);
+        this.code.append("endif:\n");
+
+
+
+        // if (condition)  goTo label_if_body
+        // [else_body]
+        // goto label_end;
+        // label_if_body:
+        // [if_body]
+        // label_end
+
+
+        // if (condition) goto then
+        // goto end
+        // then
+
+
+        return "";
+    }
+
 
     private String visitDotLinked(JmmNode jmmNode, Object o) {
 
