@@ -125,7 +125,7 @@ NewMethodDeclaration #void:
     ) #MethodDeclaration ) ;
 
 ReturnStatement:
-    < RETURN > AndExpression < SEMICOLON > ;
+    (< RETURN > AndExpression < SEMICOLON >) ; //CHANGED
 
 // DOUBT: Can this be void?
 MethodBodyDeclaration #MethodBody: (VarDeclaration)* (Statement)* ;
@@ -143,7 +143,7 @@ ParameterDeclaration #void:
 //DOUBT: (#Variable #Value) #Assign ? Expression and AndExpression is #Assign are visited? Or do we need to store something?
 Statement #void: (
     BlockStatement
-    | WhileStatement
+    | WhileLoop // CHANGED
     | IfStatement
     | SCAN 2 ((<IDENTIFIER> {jjtThis.put("name", lastConsumedToken.getImage());} (<OPEN_SQUARE_BRACES> AndExpression #ArrayAccess <CLOSE_SQUARE_BRACES>)? <ASSIGN> AndExpression) #Assign <SEMICOLON>)
     | AndExpression <SEMICOLON>
@@ -164,10 +164,10 @@ IfStatement #void:
     <CLOSE_PAREN>
         (Statement) #IfStatement)
     ((<ELSE>
-        Statement)? #Else)) #If ;
+        Statement)? #Else)) #If ; // CHANGED
 
 //DOUBT: is this void or do we need some general block for the while, to collect condition and statement
-WhileStatement #void:
+WhileLoop: 
     <WHILE> <OPEN_PAREN>
         AndExpression #WhileCondition
     <CLOSE_PAREN>

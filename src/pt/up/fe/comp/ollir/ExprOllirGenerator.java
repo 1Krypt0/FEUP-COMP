@@ -11,14 +11,14 @@ import java.util.List;
 
 
 
-public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
+public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
 
 
     private final ProgramSymbolTable symbolTable;
     final StringBuilder code;
     private final String methodName;
 
-    StatementOllirGenerator(ProgramSymbolTable symbolTable, String methodName) {
+    ExprOllirGenerator(ProgramSymbolTable symbolTable, String methodName) {
         this.symbolTable = symbolTable;
         this.code = new StringBuilder();
         this.methodName = methodName;
@@ -119,7 +119,7 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
         if(needsVariable != null) {
             // String tempVar = "t" + symbolTable.getTempVarCount(); TODO
             String tempVar = "t" + "_" + andExpression.get("line") + "_" + andExpression.get("col") + ".bool";
-            this.code.append(tempVar).append(" :=.bool ").append(instruction).append(";").append("\n");
+            this.code.append(tempVar).append(":=.bool ").append(instruction).append(";").append("\n");
             return tempVar;
         }
         return instruction;
@@ -134,7 +134,6 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
         String operation = arithmeticOp.get("op");
         String operationCode = OllirUtils.getArithmeticOperationCode(operation);
 
-
         JmmNode left = arithmeticOp.getJmmChild(0);
         JmmNode right = arithmeticOp.getJmmChild(1);
 
@@ -143,9 +142,9 @@ public class StatementOllirGenerator extends AJmmVisitor<Object, String> {
         String instruction = leftResult + " " + operationCode + " " + rightResult;
 
         if(needsVariable != null) {
-            // String tempVar = "t" + symbolTable.getTempVarCount(); TODO
-            String tempVar = "t" + "_" + arithmeticOp.get("line") + "_" + arithmeticOp.get("col") + ".i32";
-            this.code.append(tempVar).append(" :=.i32 ").append(instruction).append(";").append("\n");
+            String tempType = (operation.equals(("lt")) ? ".bool " : ".i32 ");
+            String tempVar = "t" + "_" + arithmeticOp.get("line") + "_" + arithmeticOp.get("col") + tempType;
+            this.code.append(tempVar).append(" :=").append(tempType).append(instruction).append(";").append("\n");
             return tempVar;
         }
         return instruction;

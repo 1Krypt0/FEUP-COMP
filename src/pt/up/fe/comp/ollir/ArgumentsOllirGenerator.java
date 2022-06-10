@@ -2,7 +2,6 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
@@ -30,7 +29,8 @@ public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
     }
 
     private String visitArg(JmmNode argNode, Integer integer) {
-        StatementOllirGenerator statementOllirGenerator = new StatementOllirGenerator(this.symbolTable, this.methodName);
+        ExprOllirGenerator statementOllirGenerator =
+                new ExprOllirGenerator(this.symbolTable, this.methodName);
 
         String instruction = statementOllirGenerator.visit(argNode.getJmmChild(0), 0);
 
@@ -42,9 +42,7 @@ public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
     private String visitMethodCall(JmmNode jmmNode, Integer integer) {
         StringBuilder argString = new StringBuilder();
 
-        for (JmmNode child : jmmNode.getChildren()) {
-            argString.append(visit(child, integer));
-        }
+        for (JmmNode child : jmmNode.getChildren()) argString.append(visit(child, integer));
 
         return argString.toString();
     }

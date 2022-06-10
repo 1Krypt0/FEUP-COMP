@@ -2,13 +2,8 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ArrayAccessOllirGenerator extends AJmmVisitor<Object, String> {
 
@@ -41,7 +36,7 @@ public class ArrayAccessOllirGenerator extends AJmmVisitor<Object, String> {
         JmmNode accessExpression = arrayAccessNode.getJmmChild(0);
         int argPos;
 
-        StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator(symbolTable, this.methodName);
+        ExprOllirGenerator binOpOllirGenerator = new ExprOllirGenerator(symbolTable, this.methodName);
 
 
         String instruction =  binOpOllirGenerator.visit(accessExpression, this.methodName);

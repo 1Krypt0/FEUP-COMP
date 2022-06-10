@@ -1,15 +1,12 @@
 package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
-import freemarker.core.ast.Dot;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-
-import java.util.List;
 
 public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
@@ -28,17 +25,54 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         addVisit(AstNode.Array_Creation, this::visitArrayCreation);
         addVisit(AstNode.Class_Creation, this::visitClassCreation);
         addVisit(AstNode.Dot_Linked, this::visitDotLinked);
-        // addVisit(AstNode.Array_Access, this::visitArrayAccess);
-
-
-
         addVisit(AstNode.If, this::visitIf);
-
-        /*
-        addVisit(AstNode.While, this::visitWhile);
-        */
-
+        addVisit(AstNode.While_Loop, this::visitWhile);
+        // addVisit(AstNode.Array_Access, this::visitArrayAccess);
         setDefaultVisit(this::visitDefault);
+    }
+
+
+    private boolean isSimpleCondition(String condition) {
+        //TODO: correctly match the condition
+        return condition.matches("^\\s*<.bool\\s*;\\s*$");
+    }
+
+
+    private String negateCondition(String instruction, String col, String line) {
+        if (isSimpleCondition(instruction)) return instruction.replace("<", ">=");
+
+        String temp_op_temp = "temp_" + col + "_" + line + ".bool";
+        code.append(temp_op_temp).append(" :=.bool ").append(instruction).append(";\n");
+        return  "!.bool " + temp_op_temp;
+    }
+
+
+    private String visitWhile(JmmNode jmmNode, Object integer) {
+        JmmNode condition = jmmNode.getJmmChild(0).getJmmChild(0);
+        JmmNode body = jmmNode.getJmmChild(1).getJmmChild(0);
+        //DOUBT: what to do if while body is empty?
+
+        String end_label = "END_LOOP_LABEL_" + condition.get("col") + "_" + condition.get("line");
+        String body_label = "BODY_LOOP_LABEL_" + condition.get("col") + "_" + condition.get("line");
+        String loop_label = "LOOP_LABEL_" + condition.get("col") + "_" + condition.get("line");
+
+        // get the instruction for the condition operation
+        ExprOllirGenerator exprVisitor =
+                new ExprOllirGenerator((ProgramSymbolTable) this.symbolTable, this.methodName);
+        String instruction = exprVisitor.visit(condition, null);
+
+        code.append(loop_label).append(":\n");
+        code.append(exprVisitor.getCode());
+        code.append("if (").append(instruction).append(") goto ").append(body_label).append(";\n");
+        code.append("goto ").append(end_label).append(";\n");
+
+        // loop body
+        code.append(body_label).append(":\n");
+        for (JmmNode child : body.getChildren()) visit(child, integer);
+        code.append("goto ").append(loop_label).append(";\n");
+
+        code.append(end_label).append(":\n");
+        return "";
     }
 
 
@@ -46,43 +80,41 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitIf(JmmNode jmmNode, Object o) {
         System.out.println("Visiting if");
         JmmNode condition = jmmNode.getJmmChild(0);
-        JmmNode if_block = jmmNode.getJmmChild(1).getJmmChild(0);
+        JmmNode if_code_block = jmmNode.getJmmChild(1).getJmmChild(0);
         JmmNode else_node = jmmNode.getJmmChild(2);
 
-        // condition
-        StatementOllirGenerator conditionGenerator =
-                new StatementOllirGenerator((ProgramSymbolTable) this.symbolTable, methodName);
-        String instruction = conditionGenerator.visit(condition);
-        this.code.append(conditionGenerator.getCode());
+        boolean hasElse = else_node.getChildren().size() > 0;
+        String end_label = "END_IF_LABEL_" + jmmNode.get("col") + "_" + jmmNode.get("line");
+        String else_label = "ELSE_IF_LABEL_" + jmmNode.get("col") + "_" + jmmNode.get("line");
 
-        this.code.append("if( ").append(instruction).append(" ) goto if_body;\n");
-        if(!else_node.getChildren().isEmpty()){
-            JmmNode else_block = else_node.getJmmChild(0);
-            for (JmmNode else_statement : else_block.getChildren())
-            {
-                visit(else_statement);
-            }
+
+        // get the instruction for the condition operation
+        ExprOllirGenerator exprVisitor =
+                new ExprOllirGenerator((ProgramSymbolTable) this.symbolTable, this.methodName);
+        String instruction = exprVisitor.visit(condition, null);
+        code.append(exprVisitor.getCode());
+
+        // negate the condition if it is a simple condition (var < var)
+        String if_condition = negateCondition(instruction, jmmNode.get("col"), jmmNode.get("line"));
+
+        code.append("if (").append(if_condition).append(") goto ").
+                append(hasElse ? else_label : end_label).append(";\n");
+
+        // visit the if body
+        for (JmmNode if_statement : if_code_block.getChildren()) visit(if_statement, 0);
+
+        if (hasElse) {
+            //TODO: place this in a visit, or at least a separate method
+            // add extra labels
+            code.append("goto ").append(end_label).append(";\n");
+            code.append(else_label).append(":\n");
+            JmmNode else_code_block = else_node.getJmmChild(0);
+
+            // visit the else body
+            for (JmmNode else_statement : else_code_block.getChildren()) visit(else_statement, 0);
         }
-        this.code.append("goto endif;\n");
-        this.code.append("if_body:\n");
-        for (JmmNode if_statement : if_block.getChildren()) visit(if_statement);
-        this.code.append("endif:\n");
 
-
-
-        // if (condition)  goTo label_if_body
-        // [else_body]
-        // goto label_end;
-        // label_if_body:
-        // [if_body]
-        // label_end
-
-
-        // if (condition) goto then
-        // goto end
-        // then
-
-
+        code.append(end_label).append(":\n");
         return "";
     }
 
@@ -103,7 +135,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitClassCreation(JmmNode classDecl, Object o) {
         String className = classDecl.get("name");
 
-        if(o != null) {
+        if (o != null) {
             String tempVar = "temp_" + classDecl.get("col") + "_" + classDecl.get("line") + "." + className;
             code.append(tempVar).append(" :=.").append(className).append(" new(").append(className).append(").").append(className).append(";\n");
             return tempVar;
@@ -120,7 +152,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         arrayAccessNode = arrayAccessNode.getChildren().get(0);
         //TODO: BandAid Should a class separation : right side of Assigment Exprs -> BinOp or other and visit in AssingmentVisitor
 
-        StatementOllirGenerator binOpOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+        ExprOllirGenerator binOpOllirGenerator = new ExprOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
         String arrayLength = binOpOllirGenerator.visit(arrayAccessNode, arrayAccessNode);
         code.append(binOpOllirGenerator.getCode());
 
@@ -131,12 +163,8 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
 
     private String visitMethodBody(JmmNode jmmNode, Object integer) {
-
         this.methodName = jmmNode.getJmmParent().get("name");
-
-        for (JmmNode child : jmmNode.getChildren()) {
-            visit(child, null); // TODO: should we use code.append here ?
-        }
+        for (JmmNode child : jmmNode.getChildren()) visit(child, null);
 
         return "";
     }
@@ -153,7 +181,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         String variable = OllirUtils.getIdCode(variableName, (ProgramSymbolTable) symbolTable, this.methodName);
 
-        StatementOllirGenerator statementOllirGenerator = new StatementOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
+        ExprOllirGenerator statementOllirGenerator = new ExprOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
 
         JmmNode assignedNode = assignNode.getJmmChild(0);
 
@@ -163,7 +191,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         //if it's a putfield visit binOp and MethodCall and return temp var and not instruction
         String varScope = OllirUtils.getVariableScope(variableName, methodName, (ProgramSymbolTable) symbolTable);
 
-        if(assignNode.getChildren().size() == 2 && assignNode.getJmmChild(0).getKind().equals("ArrayAccess")) {
+        if (assignNode.getChildren().size() == 2 && assignNode.getJmmChild(0).getKind().equals("ArrayAccess")) {
             ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
             variable = arrayAccessOllirGenerator.visit(assignNode, "left");
             code.append(arrayAccessOllirGenerator.getCode());
@@ -171,9 +199,8 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         }
 
 
-
         if (assignedNode.getKind().equals("ArrayCreation")) {
-            if(!varScope.equals("field")){
+            if (!varScope.equals("field")) {
                 String instruction = visit(assignedNode, null);
                 assignmentGenerator(variable, assignedNode, instruction);
             } else {
@@ -198,7 +225,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         if (assignedNode.getKind().equals("ID")) {
 
-            if(assignNode.getChildren().size() == 2 && assignNode.getJmmChild(1).getKind().equals("ArrayAccess")){
+            if (assignNode.getChildren().size() == 2 && assignNode.getJmmChild(1).getKind().equals("ArrayAccess")) {
                 ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator((ProgramSymbolTable) symbolTable, this.methodName);
                 String instruction = arrayAccessOllirGenerator.visit(assignNode, "right");
                 code.append(arrayAccessOllirGenerator.getCode());
@@ -222,7 +249,6 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         }
 
 
-
         return "";
     }
 
@@ -230,29 +256,26 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
 
         String varName;
-        if(variableCode.contains("[")){
+        if (variableCode.contains("[")) {
             varName = variableCode.substring(0, variableCode.indexOf("["));
-        }
-        else {
+        } else {
             varName = variableCode.substring(0, variableCode.indexOf('.'));
         }
 
         if (((ProgramSymbolTable) symbolTable).hasLocalVariable(this.methodName, varName)
                 || ((ProgramSymbolTable) symbolTable).getArgumentPosition(this.methodName, varName) != -1) {
 
-            if(assignedNode.getKind().equals("DotLinked")) {
+            if (assignedNode.getKind().equals("DotLinked")) {
                 Type type = ((ProgramSymbolTable) symbolTable).getVariableType(varName);
                 code.append(variableCode).append(" :=.").append(OllirUtils.getCode(type)).append(" ").append(instruction);
-            }
-            else {
+            } else {
                 code.append(variableCode).append(" ").
                         append(OllirUtils.getBinOpAssignCode(assignedNode, (ProgramSymbolTable) this.symbolTable, this.methodName)).
                         append(" ").append(instruction).append(";").append("\n");
             }
-        }
-        else{
+        } else {
             // fieldName is the substring of variableCode until the first '.'
-            if(((ProgramSymbolTable) symbolTable).hasField(varName)){
+            if (((ProgramSymbolTable) symbolTable).hasField(varName)) {
                 Type varType = ((ProgramSymbolTable) symbolTable).getFieldType(varName);
                 code.append("putfield(this, ").append(varName).append(".").append(OllirUtils.getCode(varType)).append(", ").append(instruction).append(").V;\n");
             }
@@ -269,11 +292,4 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         return "";
     }
 
-    private String visitWhile(JmmNode jmmNode, Object integer) {
-        return "";
-    }
-
-    private String visitIf(JmmNode jmmNode, Integer integer) {
-        return "";
-    }
 }

@@ -11,7 +11,7 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
+public class OllirGenerator extends AJmmVisitor<String, Integer> {
 
     private final StringBuilder codeString;
     private final SymbolTable symbolTable;
@@ -32,6 +32,10 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
 
     private Integer methodDeclVisitor(JmmNode methodDecl, Integer integer) {
 
+
+    private Integer methodDeclVisitor(JmmNode methodDecl, String integer) {
+
+        //TODO:
         System.out.println("Optimizing method " + methodDecl.get("name"));
 
         String methodName = methodDecl.get("name");
@@ -55,16 +59,17 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
             visit(node);
         }
 
+        if(methodDecl.getKind().equals("Main")) codeString.append("ret.V;\n");
         codeString.append("}\n");
         return 0;
     }
 
 
-    private Integer visitReturn(JmmNode returnNode, Integer integer) {
+    private Integer visitReturn(JmmNode returnNode, String integer) {
         System.out.println("Visit return");
 
-        StatementOllirGenerator statementOllirGenerator =
-                new StatementOllirGenerator((ProgramSymbolTable) this.symbolTable,  returnNode.getJmmParent().get("name"));
+        ExprOllirGenerator statementOllirGenerator =
+                new ExprOllirGenerator((ProgramSymbolTable) this.symbolTable,  returnNode.getJmmParent().get("name"));
 
         String instruction =  statementOllirGenerator.visit(returnNode.getJmmChild(0), 0);
         codeString.append(statementOllirGenerator.getCode());
@@ -74,7 +79,7 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
         return 0;
     }
 
-    private Integer methodBodyVisitor(JmmNode methodBody, Integer integer) {
+    private Integer methodBodyVisitor(JmmNode methodBody, String integer) {
 
         System.out.println("Visit method body for method " + methodBody.getJmmParent().get("name"));
 
@@ -85,7 +90,7 @@ public class OllirGenerator extends AJmmVisitor<Integer,Integer> {
     }
 
 
-    private Integer classDeclVisitor(JmmNode classDecl, Integer integer) {
+    private Integer classDeclVisitor(JmmNode classDecl, String integer) {
 
         System.out.println("Generating Ollir code for class " + classDecl.get("name"));
 

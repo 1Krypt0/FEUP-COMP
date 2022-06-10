@@ -100,7 +100,7 @@ public class OllirUtils {
             case "div":
                 return "/.i32";
             case "lt":
-                return "<.i32";
+                return "<.bool";
             default:
                 throw new IllegalArgumentException("Invalid arithmetic Op: " + operation);
         }
@@ -156,6 +156,11 @@ public class OllirUtils {
         }
 
         return "";
+    }
+
+
+    public String tempVar(JmmNode node) {
+        return "t_" + node.get("line") + "_" + node.get("col");
     }
 
 
