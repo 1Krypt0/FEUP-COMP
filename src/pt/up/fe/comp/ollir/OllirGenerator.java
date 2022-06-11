@@ -1,10 +1,8 @@
 package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
-import AST.AstUtils;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
@@ -14,9 +12,9 @@ import java.util.stream.Collectors;
 public class OllirGenerator extends AJmmVisitor<String, Integer> {
 
     private final StringBuilder codeString;
-    private final SymbolTable symbolTable;
+    private final ProgramSymbolTable symbolTable;
 
-    public OllirGenerator(SymbolTable symbolTable) {
+    public OllirGenerator(ProgramSymbolTable symbolTable) {
         this.codeString = new StringBuilder();
         this.symbolTable = symbolTable;
 
@@ -28,10 +26,6 @@ public class OllirGenerator extends AJmmVisitor<String, Integer> {
         addVisit(AstNode.Method_Body, this::methodBodyVisitor);
         setDefaultVisit(this::defaultVisit);
     }
-
-
-    private Integer methodDeclVisitor(JmmNode methodDecl, Integer integer) {
-
 
     private Integer methodDeclVisitor(JmmNode methodDecl, String integer) {
 
@@ -69,7 +63,7 @@ public class OllirGenerator extends AJmmVisitor<String, Integer> {
         System.out.println("Visit return");
 
         ExprOllirGenerator statementOllirGenerator =
-                new ExprOllirGenerator((ProgramSymbolTable) this.symbolTable,  returnNode.getJmmParent().get("name"));
+                new ExprOllirGenerator(this.symbolTable,  returnNode.getJmmParent().get("name"));
 
         String instruction =  statementOllirGenerator.visit(returnNode.getJmmChild(0), 0);
         codeString.append(statementOllirGenerator.getCode());
@@ -119,26 +113,18 @@ public class OllirGenerator extends AJmmVisitor<String, Integer> {
         return this.codeString.toString();
     }
 
-    private Integer initVisit(JmmNode root, Integer dummy) {
-
+    private Integer initVisit(JmmNode root, String dummy) {
         System.out.println("Generating Ollir code");
 
-        symbolTable.getImports().forEach(importString -> {
-            codeString.append("import ");
-            codeString.append(importString);
-            codeString.append(";\n");
-        });
+        symbolTable.getImports().forEach(importString ->
+                codeString.append(String.format("import %s ;\n", importString)));
 
-
-        for (JmmNode node : root.getChildren()) {
-            visit(node);
-        }
-
+        for (JmmNode node : root.getChildren()) visit(node);
         return 0;
     }
 
 
-    private Integer defaultVisit(JmmNode node, Integer dummy) {
+    private Integer defaultVisit(JmmNode node, String dummy) {
         System.out.println("Unhandled node: " + node.getKind());
         return 0;
     }

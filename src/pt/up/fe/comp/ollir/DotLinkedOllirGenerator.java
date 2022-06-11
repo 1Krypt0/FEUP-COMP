@@ -6,8 +6,6 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
-import java.util.Objects;
-
 /*
     Some examples:
     this.testFoo2(1, 1 + c).testFoo3(a);
@@ -81,7 +79,7 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
                 } else if(variableType.isArray()){
                     caller_var = name + "." + OllirUtils.getCode(variableType);
                 }*/
-            } else if ((argumentPosition = symbolTable.getArgumentPosition(methodName, name)) != -1) {
+            } else if ((argumentPosition = symbolTable.getArgPosition(name, methodName)) != -1) {
                 variableType = symbolTable.getArgumentType(methodName, name);
                 String argumentType = OllirUtils.getCode(variableType);
                 String temp_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + argumentType; // SHOULD THIS BE THE NAME OF THE FIELD?
@@ -94,7 +92,7 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
             } else if (symbolTable.isField(name)) {
                 variableType = symbolTable.getFieldType(name);
                 String fieldTypeCode = OllirUtils.getCode(variableType);
-                caller_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + fieldTypeCode; // SHOULD THIS BE THE NAME OF THE FIELD?
+                caller_var = symbolTable.tempVar() + "." + fieldTypeCode; // SHOULD THIS BE THE NAME OF THE FIELD?
                 String instruction = caller_var + " :=." + fieldTypeCode + " getfield(this," + name + "." + fieldTypeCode + ")" + "." + fieldTypeCode + ";\n";
                 code.append(instruction);
                 // if type import
@@ -135,7 +133,7 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
             String invoke = (variableType.getName() != null && variableType.getName().contains("Static")) ? "invokestatic" : "invokevirtual";
             return invoke + "(" + caller_var + ",\"" + methodName + "\"" + argsString + ")" + returnTypeCode + ";\n";
         } else if (callee.getKind().equals("Length")) {
-            return "arraylength(" + caller_var + ").i32;\n";
+            return "arraylength(" + caller_var + ").i32";
         } else if (callee.getKind().equals("ArrayAccess")) {
             // TODO: use caller variable and compound []
         }

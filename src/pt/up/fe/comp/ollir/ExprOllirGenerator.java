@@ -2,6 +2,7 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
+import pt.up.fe.comp.analysis.Scope;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -39,7 +40,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
 
     private String visitClassCreation(JmmNode classNode, Object o) {
         String className = classNode.get("name");
-        String caller_var = "temp" + classNode.get("col") + "_" + classNode.get("line") + "." + className;
+        String caller_var = symbolTable.tempVar() + "." + className;
         code.append(caller_var).append(".").append(className).append(" :=.").append(className).append(" new(").append(className).append(").").append(className).append(";\n");
         code.append("invokespecial(").append(caller_var).append(", \"<init>\").V;\n");
 
@@ -58,13 +59,18 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitId(JmmNode idNode, Object o) {
         // TODO: Code for getField
 
-        if(symbolTable.hasLocalVariable(this.methodName, idNode.get("name")) || symbolTable.getArgumentPosition(this.methodName, idNode.get("name")) != -1) {
-            return OllirUtils.getIdCode(idNode.get("name"), this.symbolTable, this.methodName);
+        Scope scope = this.symbolTable.getVariableScope(idNode.get("name"), this.methodName);
+
+        if(scope.equals(Scope.LOCAL) || scope.equals(Scope.ARGUMENT)) {
+            return OllirUtils.getIdCode(idNode.get("name"), "", this.symbolTable, this.methodName);
         }else if(symbolTable.hasField(idNode.get("name"))) {
             Type type = symbolTable.getFieldType(idNode.get("name"));
-            String temp_var = "temp" + idNode.get("col") + "_" + idNode.get("line") + "." + OllirUtils.getCode(type);
+            String temp_var = symbolTable.tempVar() + "." + OllirUtils.getCode(type);
 
-            code.append(temp_var).append(" :=.").append(OllirUtils.getCode(type)).append(" getfield(this, ").append(idNode.get("name")).append(".").append(OllirUtils.getCode(type)).append(").").append(OllirUtils.getCode(type)).append(";\n");
+            String type_code = OllirUtils.getCode(type);
+
+            code.append(String.format("%s :=.%s getfield(this, %s.%s).%s;\n",
+                    temp_var, type_code, idNode.get("name") , type_code, type_code));
 
             return temp_var;
         }
@@ -78,7 +84,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitIntegerLiteral(JmmNode node, Object needsVariable) {
 
         if(needsVariable != null) {
-            String temp_var = "temp" + node.get("col") + "_" + node.get("line") + ".i32";
+            String temp_var = symbolTable.tempVar() + ".i32";
             code.append(temp_var).append(" :=.i32 ").append(node.get("value")).append(".i32;\n");
             return temp_var;
         }
@@ -118,7 +124,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
 
         if(needsVariable != null) {
             // String tempVar = "t" + symbolTable.getTempVarCount(); TODO
-            String tempVar = "t" + "_" + andExpression.get("line") + "_" + andExpression.get("col") + ".bool";
+            String tempVar = symbolTable.tempVar() + ".bool";
             this.code.append(tempVar).append(":=.bool ").append(instruction).append(";").append("\n");
             return tempVar;
         }
@@ -143,7 +149,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
 
         if(needsVariable != null) {
             String tempType = (operation.equals(("lt")) ? ".bool " : ".i32 ");
-            String tempVar = "t" + "_" + arithmeticOp.get("line") + "_" + arithmeticOp.get("col") + tempType;
+            String tempVar = symbolTable.tempVar() + tempType;
             this.code.append(tempVar).append(" :=").append(tempType).append(instruction).append(";").append("\n");
             return tempVar;
         }

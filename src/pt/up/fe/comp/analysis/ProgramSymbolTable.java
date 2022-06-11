@@ -3,6 +3,7 @@ package pt.up.fe.comp.analysis;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
+import pt.up.fe.comp.jmm.ast.JmmNode;
 
 import java.util.*;
 
@@ -17,6 +18,7 @@ public class ProgramSymbolTable implements SymbolTable {
     private final Map<String, List<Symbol>> localVariables;
     private String className;
     private String superClass;
+    private int tempCounter;
 
     public ProgramSymbolTable() {
         this.imports = new ArrayList<>();
@@ -27,6 +29,7 @@ public class ProgramSymbolTable implements SymbolTable {
         this.methodParameters = new HashMap<>();
         this.fields = new ArrayList<>();
         this.localVariables = new HashMap<>();
+        this.tempCounter = 0;
     }
 
     @Override
@@ -155,57 +158,32 @@ public class ProgramSymbolTable implements SymbolTable {
         return null;
     }
 
-    public Symbol getLocalVariables(String methodName, String localVariableName) {
-        for (Symbol localVariable : this.localVariables.get(methodName)) {
-            if (localVariable.getName().equals(localVariableName)) {
-                return localVariable;
-            }
-        }
-        return null;
-    }
 
-    public Type getVariableType(String variableName) {
-        for (String methodName : this.methods) {
-            for (Symbol localVariable : this.localVariables.get(methodName)) {
-                if (localVariable.getName().equals(variableName)) {
-                    return localVariable.getType();
-                }
-            }
-        }
-        // get type from arguments
-        for (String methodName : this.methods) {
-            for (Symbol parameter : this.methodParameters.get(methodName)) {
-                if (parameter.getName().equals(variableName)) {
-                    return parameter.getType();
-                }
-            }
-        }
+    //TODO: Uni
+    public Type getVariableType(String variableName, String methodName) {
+        for (Symbol localVariable : this.localVariables.get(methodName))
+            if (localVariable.getName().equals(variableName))
+                return localVariable.getType();
 
-        // TODO: if it's a field, return the field type
-        for (Symbol field : this.fields) {
-            if (field.getName().equals(variableName)) {
+        for (Symbol parameter : this.methodParameters.get(methodName))
+            if (parameter.getName().equals(variableName))
+                return parameter.getType();
+
+        for (Symbol field : this.fields)
+            if (field.getName().equals(variableName))
                 return field.getType();
-            }
-        }
 
         return null;
     }
 
-    public Integer getArgumentPosition(String methodName, String argumentName) {
-
-        var a  = this.methodParameters;
-
+    public Integer getArgPosition(String argumentName, String methodName) {
         List<Symbol> parameters = this.methodParameters.get(methodName);
 
-        if (parameters == null) {
-            return -1;
-        }
+        if (parameters == null) return -1;
 
-        for (int i = 0; i < this.methodParameters.get(methodName).size(); i++) {
-            if (this.methodParameters.get(methodName).get(i).getName().equals(argumentName)) {
-                return i;
-            }
-        }
+        for (int i = 0; i < this.methodParameters.get(methodName).size(); i++)
+            if (this.methodParameters.get(methodName).get(i).getName().equals(argumentName)) return i;
+
         return -1;
     }
 
@@ -228,17 +206,6 @@ public class ProgramSymbolTable implements SymbolTable {
         return this.imports.stream().anyMatch(f -> f.endsWith(className));
     }
 
-
-    public boolean isLocalVariableObjectClassType(String variableName, String methodName) {
-        if (variableName.equals(this.className))
-            return true;
-
-        for (Symbol localVariable : this.localVariables.get(methodName)) {
-            if( localVariable.getName().equals(variableName) && localVariable.getType().getName().equals(this.className))
-                return true;
-        }
-        return false;
-    }
 
     public boolean isField(String variableName) {
         for (Symbol field : this.fields) {
@@ -279,17 +246,38 @@ public class ProgramSymbolTable implements SymbolTable {
     }
 
 
-    public int getArgumentPosition(String methodName, String argumentName, String variableName) {
-        // find the method functionally
-        List<Symbol> methodParametersList = this.methodParameters.get(methodName);
-        // get the position of the argument
-        int position = -1;
-        for (int i = 0; i < methodParametersList.size(); i++) {
-            if (methodParametersList.get(i).getName().equals(argumentName)) {
-                position = i;
-            }
-        }
-        return position;
+    public Scope getVariableScope(String variableName, String methodName) {
+        for (Symbol symbol : this.getLocalVariables(methodName))
+            if (symbol.getName().equals(variableName)) return Scope.LOCAL;
+
+        for (Symbol symbol : this.getArguments(methodName))
+            if (symbol.getName().equals(variableName)) return Scope.ARGUMENT;
+
+        for (Symbol symbol : this.getFields())
+            if (symbol.getName().equals(variableName)) return Scope.FIELD;
+
+        if (this.isImport(variableName)) return Scope.IMPORT;
+
+        return null;
+    }
+
+    /**
+     * Creates a tempVar with the line and column of the node.
+     * @return the tempVar string
+     */
+    public String tempVar() {
+        return "t_" + tempCounter++;
+    }
+
+    /**
+     * Returns a label of the form name_line_col.
+     * @param name the name of the label
+     * @param node the node
+     * @return the label string
+     */
+
+    public String label(String name, JmmNode node) {
+        return name + "_" + node.get("line") + "_" + node.get("col");
     }
 
 

@@ -5,6 +5,9 @@ import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
+/**
+ * Visits a dot linked node (the complete method call) and generate the OLLIR code for the arguments.
+ */
 public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
 
     private final StringBuilder code;
@@ -29,12 +32,12 @@ public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
     }
 
     private String visitArg(JmmNode argNode, Integer integer) {
-        ExprOllirGenerator statementOllirGenerator =
+        ExprOllirGenerator exprVisitor =
                 new ExprOllirGenerator(this.symbolTable, this.methodName);
 
-        String instruction = statementOllirGenerator.visit(argNode.getJmmChild(0), 0);
+        String instruction = exprVisitor.visit(argNode.getJmmChild(0), 0);
 
-        code.append(statementOllirGenerator.getCode());
+        code.append(exprVisitor.getCode());
 
         return ", "+  instruction;
     }
