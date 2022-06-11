@@ -26,11 +26,16 @@ public class OllirToJasmin {
         var classCode = new StringBuilder();
 
         // Class Name
-        classCode.append(".class public ").append(classUnit.getClassName()).append("\n");
+        classCode.append(".class public ").append(classUnit.getClassName()).append("\n\n");
 
         //
         // TODO: imports
         //
+        for (var import2 : classUnit.getImports()){
+            classCode.append(".import ");
+            classCode.append(import2.toString()).append("\n");
+         }
+         classCode.append("\n");
 
         // Super Class and Constructor
         // TODO: separate getting super and building the constructor
@@ -129,7 +134,7 @@ public class OllirToJasmin {
     // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
     public String getMethodAccessModifier(Method method){
         AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
-        System.out.println(method.getMethodName() + "     |      " + methodAccessModifier);
+        //System.out.println(method.getMethodName() + "     |      " + methodAccessModifier);
         switch (methodAccessModifier){
             case PUBLIC:
                 return "public";
