@@ -1,4 +1,4 @@
-package pt.up.fe.comp.analysis.semantic.type;
+package pt.up.fe.comp.analysis.semantic;
 
 import AST.AstNode;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
@@ -12,11 +12,11 @@ import pt.up.fe.comp.analysis.ProgramSymbolTable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
+public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
     private final List<Report> reports;
     private final ProgramSymbolTable symbolTable;
 
-    public SemanticAnalyser(ProgramSymbolTable symbolTable) {
+    public TypeAnalyser(ProgramSymbolTable symbolTable) {
         reports = new ArrayList<>();
         this.symbolTable = symbolTable;
         addVisit(AstNode.I_D, this::visitIDs);
@@ -63,7 +63,6 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
     }
 
 
-
     private String visitIDs(JmmNode node, List<Report> reports) {
         final String name = node.get("name");
         Symbol symbol = symbolTable.getField(name);
@@ -79,7 +78,7 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
 
         boolean isImportedClass = symbolTable.isImport(name);
 
-        if(isImportedClass) {
+        if (isImportedClass) {
             node.put("type", name);
             return name;
         }
@@ -231,7 +230,7 @@ public class SemanticAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         } else {
             assignedType = visit(node.getChildren().get(0), reports);
 
-            if(assignedType.equals("array") && node.getJmmChild(1).getKind().equals("ArrayAccess")) {
+            if (assignedType.equals("array") && node.getJmmChild(1).getKind().equals("ArrayAccess")) {
                 assignedType = "int";
             }
 

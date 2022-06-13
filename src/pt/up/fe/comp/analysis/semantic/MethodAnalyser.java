@@ -28,44 +28,54 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         return this.reports;
     }
 
+    /**
+     * Checks if the method is being called from the class in the file where it is declared.
+     *
+     * @param node method being called
+     * @return true if method is being called by the same class, false otherwise
+     */
+    private boolean isCallingFromSelf(JmmNode node, JmmNode caller) {
+        String id = caller.getAttributes().contains("name") ? caller.get("name") : "";
+        if (caller.getKind().equals("This") || id.equals(symbolTable.getClassName())) {
+            return true;
+        } else if (caller.getKind().equals("ID")) { // Check if variable is of class in file
+            String varType = getVariableType(id, node.getAncestor("MethodDeclaration").get().get("name"));
+            if (!(varType == null)) {
+                return varType.equals(symbolTable.getClassName());
+            }
+        }
+        return false;
+    }
+
     private String visitMethodCalls(JmmNode node, List<Report> reports) {
+
         int idx = node.getIndexOfSelf();
         JmmNode caller = node.getJmmParent().getChildren().get(idx - 1);
         String id = caller.getAttributes().contains("name") ? caller.get("name") : "";
-        if (caller.getKind().equals("This") || id.equals(symbolTable.getClassName())) {
-            // Method not defined in class
+        if (isCallingFromSelf(node, caller)) {
             if (!symbolTable.hasMethod(node.get("name"))) {
-                // Check for extension
+                // Check if class is extended
                 if (!node.getAncestor("ClassDecl").get().getAttributes().contains("extended_class")) {
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                             Integer.parseInt(node.get("col")), "Call to undeclared method in class"));
                 }
             }
-        } else {
-            // can also be a variable id
-            String varType = getVariableType(id, node.getAncestor("MethodDeclaration").get().get("name"));
-            if (!(varType == null)) {
-                if (varType.equals(symbolTable.getClassName())) {
-                    if (!symbolTable.hasMethod(node.get("name"))) {
-                        if (!node.getAncestor("ClassDecl").get().getAttributes().contains("extended_class")) {
-                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
-                                    Integer.parseInt(node.get("col")), ""));
-                        }
-                    }
-                }
-            } else {
-                // Check if class is defined in imports, if it is, assume it is correct
-                if (!symbolTable.getImports().contains(id)) {
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
-                            Integer.parseInt(node.get("col")), "Cannot call method. Class was not imported"));
-                }
-            }
+        } else if (!symbolTable.getImports().contains(id)) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                    Integer.parseInt(node.get("col")), "Cannot call method. Class was not imported"));
         }
 
-
-        return null;
+        return "";
     }
 
+    /**
+     * Fetches the type of the variable from the symbol table, be it a field of the class, a local variable of the
+     * method or a parameter from the method
+     *
+     * @param varID           The variable name
+     * @param methodSignature The method in which it is mentioned
+     * @return The type of the variable if the variable is found, null otherwise
+     */
     private String getVariableType(String varID, String methodSignature) {
         boolean isField = symbolTable.hasField(varID);
         if (isField) {
