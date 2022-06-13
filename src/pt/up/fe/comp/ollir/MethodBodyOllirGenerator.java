@@ -39,8 +39,17 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         // addVisit(AstNode.Method_Call, this::visitMethodCall);
         addVisit(AstNode.True, this::visitBool);
         addVisit(AstNode.False, this::visitBool);
+        addVisit(AstNode.Negation, this::visitNegation);
 
         setDefaultVisit(this::visitDefault);
+    }
+
+    private String visitNegation(JmmNode jmmNode, Object o) {
+        ExprOllirGenerator exprOllirGenerator = new ExprOllirGenerator(symbolTable, methodName);
+        String expr = exprOllirGenerator.visit(jmmNode.getJmmChild(0), "bool");
+        String temp_var = symbolTable.tempVar() + ".bool";
+        code.append(String.format("%s :=.bool !.bool %s;\n", temp_var, expr));
+        return temp_var;
     }
 
     private String visitMethodBody(JmmNode jmmNode, Object integer) {

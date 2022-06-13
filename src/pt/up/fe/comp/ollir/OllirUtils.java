@@ -97,7 +97,7 @@ public class OllirUtils {
     /**
      * From a bin op node return the type of the assign to the variable on the left hand side.
      *
-     * @param assignNode the assign node
+     * @param assignNode  the assign node
      * @param symbolTable the symbol table
      * @return the type of the variable on the left hand side
      */
@@ -109,6 +109,7 @@ public class OllirUtils {
                 else return ":=.i32";
             case "True":
             case "False":
+            case  "Negation":
                 return ":=.bool";
             case "IntegerLiteral":
                 return ":=.i32";
@@ -149,6 +150,7 @@ public class OllirUtils {
 
     /**
      * Returns the bool variable code for a boolean literal
+     *
      * @param booleanNode the boolean literal node
      * @return the boolean var code
      */
@@ -163,15 +165,17 @@ public class OllirUtils {
      * @param node the integer literal node
      * @return the int var code
      */
-    public static String getIntegerLiteralCode(JmmNode node) {return node.get("value") + ".i32";}
+    public static String getIntegerLiteralCode(JmmNode node) {
+        return node.get("value") + ".i32";
+    }
 
 
     /**
      * Returns the variable code for an identifier (with $argNo if necessary).
      *
-     * @param idName the variable node
+     * @param idName      the variable node
      * @param symbolTable the symbol table
-     * @param methodName the method name (local scope)
+     * @param methodName  the method name (local scope)
      * @return the variable code
      */
     public static String getIdCode(String idName, String arrayAccess, ProgramSymbolTable symbolTable, String methodName) {
@@ -180,15 +184,13 @@ public class OllirUtils {
 
         if (variableIndex != -1) code.append(String.format("$%d.", variableIndex));
 
-        if(!arrayAccess.equals("")) code.append(String.format("%s%s.%s", idName, arrayAccess, "i32"));
+        if (!arrayAccess.equals("")) code.append(String.format("%s%s.%s", idName, arrayAccess, "i32"));
 
         else
             code.append(String.format("%s.%s", idName, getCode(symbolTable.getVariableType(idName, methodName))));
 
         return code.toString();
     }
-
-
 
 
 }

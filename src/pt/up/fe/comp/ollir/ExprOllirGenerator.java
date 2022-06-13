@@ -44,12 +44,21 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
         addVisit(AstNode.Dot_Linked, this::visitDotLinked);
         addVisit(AstNode.False, this::visitBool);
         addVisit(AstNode.True, this::visitBool);
+        addVisit(AstNode.Negation, this::visitNegation);
 
         // addVisit(AstNode.Array_Access, this::visitArrayAccess); //TODO
         // TODO: we need to check if the variable is in the same method or is a field (getField)
         // addVisit(AstNode.This, this::visitThis);
         setDefaultVisit(this::defaultVisitor);
         // addVisit(AstNode.Method_Call, this::visitMethodCall); // TODO
+    }
+
+    private String visitNegation(JmmNode jmmNode, Object o) {
+        ExprOllirGenerator exprOllirGenerator = new ExprOllirGenerator(symbolTable, methodName);
+        String expr = exprOllirGenerator.visit(jmmNode.getJmmChild(0), "bool");
+        String temp_var = symbolTable.tempVar() + ".bool";
+        code.append(String.format("%s :=.bool !.bool %s;\n", temp_var, expr));
+        return temp_var;
     }
 
     // private String visitMethodCall(JmmNode jmmNode, Object o) {return "";}
@@ -97,7 +106,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
             Type varType = symbolTable.getVariableType(idNode.get("name"), this.methodName);
             String tempVar = this.symbolTable.tempVar() + "." + (arrayAccess.isEmpty() ? OllirUtils.getCode(varType) : "i32");
             String varCode = OllirUtils.getIdCode(idNode.get("name"), arrayAccess, this.symbolTable, this.methodName);
-            if(needsVariable == null) return varCode;
+            if (needsVariable == null) return varCode;
             code.append(String.format("%s :=.%s %s;\n", tempVar,
                     (arrayAccess.isEmpty() ? OllirUtils.getCode(varType) : "i32"), varCode));
             return tempVar;
@@ -131,7 +140,8 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
         // see what type of operation we are doing
         String operation = binOpExpression.get("op");
 
-        if (OllirUtils.getArithmeticOperations().contains(operation)) return visitArithmeticOp(binOpExpression, needsVariable);
+        if (OllirUtils.getArithmeticOperations().contains(operation))
+            return visitArithmeticOp(binOpExpression, needsVariable);
         else if (operation.equals("and")) return visitAnd(binOpExpression, needsVariable);
         return "";
     }
@@ -187,6 +197,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
     public String getCode() {
         return this.code.toString();
     }
+
     private String defaultVisitor(JmmNode jmmNode, Object o) {
         System.out.println("Not implemented " + jmmNode.getKind());
         return "";
