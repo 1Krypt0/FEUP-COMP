@@ -2,10 +2,12 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
+/**
+ * Visits a dot linked node (the complete method call) and generate the OLLIR code for the arguments.
+ */
 public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
 
     private final StringBuilder code;
@@ -30,11 +32,12 @@ public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
     }
 
     private String visitArg(JmmNode argNode, Integer integer) {
-        StatementOllirGenerator statementOllirGenerator = new StatementOllirGenerator(this.symbolTable, this.methodName);
+        ExprOllirGenerator exprVisitor =
+                new ExprOllirGenerator(this.symbolTable, this.methodName);
 
-        String instruction = statementOllirGenerator.visit(argNode.getJmmChild(0), 0);
+        String instruction = exprVisitor.visit(argNode.getJmmChild(0), 0);
 
-        code.append(statementOllirGenerator.getCode());
+        code.append(exprVisitor.getCode());
 
         return ", "+  instruction;
     }
@@ -42,9 +45,7 @@ public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
     private String visitMethodCall(JmmNode jmmNode, Integer integer) {
         StringBuilder argString = new StringBuilder();
 
-        for (JmmNode child : jmmNode.getChildren()) {
-            argString.append(visit(child, integer));
-        }
+        for (JmmNode child : jmmNode.getChildren()) argString.append(visit(child, integer));
 
         return argString.toString();
     }
