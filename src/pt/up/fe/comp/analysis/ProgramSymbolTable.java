@@ -138,6 +138,10 @@ public class ProgramSymbolTable implements SymbolTable {
         return this.localVariables.get(methodSignature).stream().anyMatch(f -> f.getName().equals(localVariableName));
     }
 
+    public boolean hasParameter(String methodSignature, String parameterName) {
+        return this.methodParameters.get(methodSignature).stream().anyMatch(f -> f.getName().equals(parameterName));
+    }
+
     public void addLocalVariables(String methodSignature, List<Symbol> localVariables) {
         if (!this.localVariables.containsKey(methodSignature)) {
             this.localVariables.put(methodSignature, new ArrayList<>());
@@ -193,7 +197,7 @@ public class ProgramSymbolTable implements SymbolTable {
 
     public Integer getArgumentPosition(String methodName, String argumentName) {
 
-        var a  = this.methodParameters;
+        var a = this.methodParameters;
 
         List<Symbol> parameters = this.methodParameters.get(methodName);
 
@@ -234,7 +238,7 @@ public class ProgramSymbolTable implements SymbolTable {
             return true;
 
         for (Symbol localVariable : this.localVariables.get(methodName)) {
-            if( localVariable.getName().equals(variableName) && localVariable.getType().getName().equals(this.className))
+            if (localVariable.getName().equals(variableName) && localVariable.getType().getName().equals(this.className))
                 return true;
         }
         return false;
@@ -291,7 +295,6 @@ public class ProgramSymbolTable implements SymbolTable {
         }
         return position;
     }
-
 
 
 }
