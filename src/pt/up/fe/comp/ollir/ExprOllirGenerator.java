@@ -70,7 +70,9 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
 
     private String visitDotLinked(JmmNode jmmNode, Object o) {
         DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator(this.symbolTable, this.methodName);
-        String instruction = dotLinkedOllirGenerator.visit(jmmNode, null);
+
+        // TODO: infer type
+        String instruction = dotLinkedOllirGenerator.visit(jmmNode, ".i32");
         code.append(dotLinkedOllirGenerator.getCode());
 
         return instruction;
@@ -93,10 +95,11 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
 
         if (scope.equals(Scope.LOCAL) || scope.equals(Scope.ARGUMENT)) {
             Type varType = symbolTable.getVariableType(idNode.get("name"), this.methodName);
-            String tempVar = this.symbolTable.tempVar() + "." + OllirUtils.getCode(varType);
+            String tempVar = this.symbolTable.tempVar() + "." + (arrayAccess.isEmpty() ? OllirUtils.getCode(varType) : "i32");
             String varCode = OllirUtils.getIdCode(idNode.get("name"), arrayAccess, this.symbolTable, this.methodName);
             if(needsVariable == null) return varCode;
-            code.append(String.format("%s.%s :=.%s %s;\n", tempVar, OllirUtils.getCode(varType), OllirUtils.getCode(varType), varCode));
+            code.append(String.format("%s :=.%s %s;\n", tempVar,
+                    (arrayAccess.isEmpty() ? OllirUtils.getCode(varType) : "i32"), varCode));
             return tempVar;
         } else if (symbolTable.hasField(idNode.get("name"))) {
             Type type = symbolTable.getFieldType(idNode.get("name"));
@@ -141,6 +144,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
         JmmNode left = andExpression.getJmmChild(0);
         JmmNode right = andExpression.getJmmChild(1);
 
+        // TODO: force variable
         String leftResult = visit(left, !left.getKind().equals("True") && !left.getKind().equals("False"));
         String rightResult = visit(right, !right.getKind().equals("True") && !right.getKind().equals("False"));
         String instruction = leftResult + " &&.bool " + rightResult;
@@ -148,7 +152,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
         if (needsVariable != null) {
             // String tempVar = "t" + symbolTable.getTempVarCount(); TODO
             String tempVar = symbolTable.tempVar() + ".bool";
-            this.code.append(String.format("%s.%s :=.bool %s;\n", symbolTable.tempVar(), instruction));
+            this.code.append(String.format("%s.bool :=.bool %s;\n", symbolTable.tempVar(), instruction));
             return tempVar;
         }
         return instruction;
@@ -165,6 +169,7 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
         JmmNode left = arithmeticOp.getJmmChild(0);
         JmmNode right = arithmeticOp.getJmmChild(1);
 
+        // TODO: force variable
         String leftResult = visit(left, !left.getKind().equals("IntegerLiteral"));
         String rightResult = visit(right, !right.getKind().equals("IntegerLiteral"));
         String instruction = leftResult + " " + operationCode + " " + rightResult;
@@ -177,12 +182,6 @@ public class ExprOllirGenerator extends AJmmVisitor<Object, String> {
         }
         return instruction;
     }
-
-
-    private boolean isArrayAccess(JmmNode jmmNode) {
-        return jmmNode.getKind().equals("ArrayAccess");
-    }
-
 
 
     public String getCode() {
