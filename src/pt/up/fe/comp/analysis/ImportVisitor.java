@@ -8,8 +8,7 @@ import java.util.List;
 
 public class ImportVisitor extends AJmmVisitor<JmmNode, String> {
 
-    private List<String> imports;
-    JmmNode startNode;
+    private final List<String> imports;
 
     public ImportVisitor() {
         imports = new ArrayList<>();

@@ -160,17 +160,18 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         // band-aid for array access, we need to get the assign node to see
         // if it has 2 children and get the array expression
-        if (isArrayAccess(jmmNode.getJmmParent(), "right")) {
-            JmmNode arrayAccessOp = getArrayAccess(jmmNode.getJmmParent(), "right").getJmmChild(0);
+        if (isArrayAccess(jmmNode)) {
+            JmmNode arrayAccessOp = jmmNode.getJmmChild(0).getJmmChild(0);
             ExprOllirGenerator exprOllirGenerator = new ExprOllirGenerator(symbolTable, this.methodName);
             arrayAccess = "[" + exprOllirGenerator.visit(arrayAccessOp, 0) + "]";
             code.append(exprOllirGenerator.getCode());
         }
 
         if (varScope.equals(Scope.ARGUMENT)) {
-            Type type = symbolTable.getVariableType(variable, methodName);
-            int index = symbolTable.getArgPosition(variable, methodName);
-            return String.format("$%d.%s%s.%s", index, variable, arrayAccess, OllirUtils.getCode(type));
+            // Type type = symbolTable.getVariableType(variable, methodName);
+            // int index = symbolTable.getArgPosition(variable, methodName);
+            // return String.format("$%d.%s%s.%s", index, variable, arrayAccess, OllirUtils.getCode(type));
+            return OllirUtils.getIdCode(variable, arrayAccess, this.symbolTable, this.methodName);
         } else if (varScope.equals(Scope.LOCAL)) {
             Type type = symbolTable.getVariableType(variable, methodName);
             return String.format("%s%s.%s", variable, arrayAccess, OllirUtils.getCode(type));
@@ -191,11 +192,13 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
         DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator(symbolTable, this.methodName);
 
-        // Enters the dot linked generation visitor, with implying the void return type (since it's not an assign)
+        // Enters the dot linked generation visitor,
+        // implying the void return type (since it's not an assign)
         String instruction = dotLinkedOllirGenerator.visit(jmmNode,
                 jmmNode.getJmmParent().getKind().equals("Assign") ? null : ".V");
 
         code.append(dotLinkedOllirGenerator.getCode());
+
         code.append(instruction);
 
         return instruction;
@@ -214,9 +217,10 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         String variableName = assignNode.get("name");
         String arrayAccess = "";
 
+
         // TODO: handle the field access
-        if (isArrayAccess(assignNode, "left")) {
-            JmmNode arrayAccessOp = getArrayAccess(assignNode, "left").getJmmChild(0);
+        if (isArrayAccess(assignNode)) {
+            JmmNode arrayAccessOp = assignNode.getJmmChild(0).getJmmChild(0);
             ExprOllirGenerator exprOllirGenerator = new ExprOllirGenerator(symbolTable, this.methodName);
             arrayAccess = "[" + exprOllirGenerator.visit(arrayAccessOp, 0) + "]";
             code.append(exprOllirGenerator.getCode());
@@ -234,43 +238,10 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         return "";
     }
 
-    // tree follows the structure
-    //           ASSIGN var:a                a[i] = b[j]
-    //   /         |           \
-    //  ArrAcc i    Id b        ArrAcc j
-    // or
-    //           ASSIGN var:a                a[i] = x
-    //        /         \
-    //    ArrAcc i        Id x
-    // or
-    //           ASSIGN  var:x               x = a[i]
-    //        /         \
-    //    Id  a          ArrAcc i
 
-    private JmmNode getArrayAccess(JmmNode jmmNode, String side) {
-        // arrAccess as the first child of the assign node, means the lhs is an array access
-        if (side.equals("left")) return jmmNode.getJmmChild(0);
-
-        // if not, find the first array access op in the rhs (2nd or 3rd child)
-        List<JmmNode> children = jmmNode.getChildren();
-        for (int i = children.size() - 1; i >= 0; i--)
-            if (children.get(i).getKind().equals("ArrayAccess"))
-                return children.get(i);
-        return null;
-    }
-
-
-    private boolean isArrayAccess(JmmNode assignNode, String side) {
-        if (assignNode.getChildren().size() < 2)
-            return false;
-
-        if (side.equals("left"))
-            return assignNode.getJmmChild(0).getKind().equals("ArrayAccess");
-
-        for (int i = 1; i < assignNode.getChildren().size(); i++)
-            if (assignNode.getJmmChild(i).getKind().equals("ArrayAccess"))
-                return true;
-        return false;
+    private boolean isArrayAccess(JmmNode assignNode) {
+        return !assignNode.getChildren().isEmpty()
+                && assignNode.getJmmChild(0).getKind().equals("ArrayAccess");
     }
 
 
@@ -285,18 +256,16 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         String varName;
 
         if (variableCode.startsWith("$")){
+            // remove the arg position from the variable code
             String argPos = variableCode.substring(0, variableCode.indexOf('.') + 1);
-            // remove $<int>. from the variable code
             variableCode = variableCode.replaceAll(Matcher.quoteReplacement(argPos), "");
         }
-
 
         // get the name of the variable, in case it's an array ollir code and a simple var
         if (variableCode.contains("[")) varName = variableCode.substring(0, variableCode.indexOf("["));
         else varName = variableCode.substring(0, variableCode.indexOf('.')); // from var.i32 to var
 
         Scope varScope = symbolTable.getVariableScope(varName, methodName);
-        System.out.println("Variable scope: " + varScope);
 
         if (varScope.equals(Scope.LOCAL) || varScope.equals(Scope.ARGUMENT)) {
             // if it's a dot linked expression, force the assign to return the type of the left-hand side
@@ -349,9 +318,10 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
 
 
     private String visitArrayAccess(JmmNode jmmNode, Object integer) {
-        ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator(symbolTable, this.methodName);
-        code.append(arrayAccessOllirGenerator.getCode());
-        return arrayAccessOllirGenerator.visit(jmmNode, "left");
+        // ArrayAccessOllirGenerator arrayAccessOllirGenerator = new ArrayAccessOllirGenerator(symbolTable, this.methodName);
+        //code.append(arrayAccessOllirGenerator.getCode());
+        // return arrayAccessOllirGenerator.visit(jmmNode, "left");
+        return "";
     }
 
 

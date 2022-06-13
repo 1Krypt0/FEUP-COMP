@@ -179,11 +179,11 @@ public class OllirUtils {
         Integer variableIndex = symbolTable.getArgPosition(idName, methodName);
 
         if (variableIndex != -1) code.append(String.format("$%d.", variableIndex));
-        if(!arrayAccess.equals(""))
-            code.append(String.format("%s%s.%s", idName, arrayAccess, "i32"));
+
+        if(!arrayAccess.equals("")) code.append(String.format("%s%s.%s", idName, arrayAccess, "i32"));
+
         else
-            code.append(String.format("%s.%s",
-                    idName, getCode(symbolTable.getVariableType(idName, methodName))));
+            code.append(String.format("%s.%s", idName, getCode(symbolTable.getVariableType(idName, methodName))));
 
         return code.toString();
     }

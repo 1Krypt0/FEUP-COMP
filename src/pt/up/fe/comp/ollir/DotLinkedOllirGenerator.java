@@ -72,13 +72,6 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
             if (symbolTable.isLocalVariable(name, methodName)) {
                 variableType = symbolTable.getLocalVariableType(name, this.methodName);
                 caller_var = name + "." + OllirUtils.getCode(variableType);
-                 /* if(Objects.equals(variableType.getName(), this.symbolTable.getClassName())){
-                    caller_var = name + "." + OllirUtils.getCode(variableType);
-                } else if(this.symbolTable.isImport(variableType.getName())){
-                    caller_var = name + "." + OllirUtils.getCode(variableType);
-                } else if(variableType.isArray()){
-                    caller_var = name + "." + OllirUtils.getCode(variableType);
-                }*/
             } else if ((argumentPosition = symbolTable.getArgPosition(name, methodName)) != -1) {
                 variableType = symbolTable.getArgumentType(methodName, name);
                 String argumentType = OllirUtils.getCode(variableType);
@@ -122,6 +115,8 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
             ArgumentsOllirGenerator argumentsOllirGenerator = new ArgumentsOllirGenerator(symbolTable, this.methodName);
             code.append(argumentsOllirGenerator.getCode());
             String argsString = argumentsOllirGenerator.visit(callee, 1);
+            code.append(argumentsOllirGenerator.getCode());
+
             String returnTypeCode;
 
             if (symbolTable.isMethod(methodName)) {
@@ -131,9 +126,17 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
             }
 
             String invoke = (variableType.getName() != null && variableType.getName().contains("Static")) ? "invokestatic" : "invokevirtual";
-            return invoke + "(" + caller_var + ",\"" + methodName + "\"" + argsString + ")" + returnTypeCode + ";\n";
+            String method_call =  invoke + "(" + caller_var + ",\"" + methodName + "\"" + argsString + ")" + returnTypeCode + ";\n";
+            if(returnType != null) return method_call;
+            String temp_var = symbolTable.tempVar() + "." + OllirUtils.getCode(variableType);
+            code.append(String.format("%s :=%s %s", temp_var, returnTypeCode, method_call));
+            return temp_var;
         } else if (callee.getKind().equals("Length")) {
-            return "arraylength(" + caller_var + ").i32";
+            String arrayLength = "arraylength(" + caller_var + ").i32";
+            if (returnType != null) return arrayLength;
+            String temp_var = symbolTable.tempVar() + ".i32";
+            code.append(String.format("%s :=.i32 %s;\n", temp_var, arrayLength));
+            return temp_var;
         } else if (callee.getKind().equals("ArrayAccess")) {
             // TODO: use caller variable and compound []
         }
