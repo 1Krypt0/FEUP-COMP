@@ -3,7 +3,8 @@ package pt.up.fe.comp.analysis;
 import java.util.ArrayList;
 import java.util.List;
 
-import pt.up.fe.comp.analysis.semantic.type.SemanticAnalyser;
+import pt.up.fe.comp.analysis.semantic.MethodAnalyser;
+import pt.up.fe.comp.analysis.semantic.TypeAnalyser;
 import pt.up.fe.comp.jmm.analysis.JmmAnalysis;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
@@ -20,8 +21,10 @@ public class JmmAnalyser implements JmmAnalysis {
         symbolTableFiller.visit(parserResult.getRootNode(), symbolTable);
         reports.addAll(symbolTableFiller.getReports());
 
-        SemanticAnalyser analyser = new SemanticAnalyser(symbolTable);
-        analyser.visit(parserResult.getRootNode(), reports);
+        MethodAnalyser methodAnalyser = new MethodAnalyser(symbolTable);
+        TypeAnalyser typeAnalyser = new TypeAnalyser(symbolTable);
+        methodAnalyser.visit(parserResult.getRootNode(), reports);
+        //typeAnalyser.visit(parserResult.getRootNode(), reports);
         System.out.println("REPORTS: " + reports);
 
         return new JmmSemanticsResult(parserResult, symbolTable, reports);
