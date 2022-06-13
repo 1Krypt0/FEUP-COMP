@@ -1,5 +1,48 @@
 # Compilers Project
 
+## GROUP 4C Evaluation
+
+(Names, numbers, self assessment, and contribution of the members of the group to the project according to:)
+NAME1: António Ribeiro NR1: up201906761, GRADE1: <0 to 20 value>, CONTRIBUTION1: <0 to 100 %>
+NAME2: Mário Travassos, NR2: up201905871, GRADE2: <0 to 20 value>, CONTRIBUTION2: <0 to 100 %>
+NAME3: Ricardo Pintos, NR2: up201806849, GRADE2: <0 to 20 value>, CONTRIBUTION2: <0 to 100 %>
+NAME4: Tiago Rodrigues, NR2: up201907021, GRADE2: <0 to 20 value>, CONTRIBUTION2: <0 to 100 %>
+
+GLOBAL Grade of the project: <0 to 20>
+
+ 
+## Projet description
+
+### SUMMARY: (Describe what your tool does and its main features.)
+
+- As described by the project's guidelines, the tool developed in this class is a compiler of jmm (Java--) code files. It implements the several stages of compilation, Parsing, Syntax and Semantic analysis, Intermediate code generation and assembly type instructions (in this case jasmin), converting the original jmm to a executable class file.
+
+
+### SEMANTIC ANALYSIS: (Refer the semantic rules implemented by your tool.)
+
+
+### CODE GENERATION: (describe how the code generation of your tool works and identify the possible problems your tool has regarding code generation.)
+
+#### Ollir
+
+- After the Semantic analysis step, we gather the information given by the symbol table to parse the jmm and construct our code. 
+- This stage is delegated to 5 different visitor classes (modular approach): ArgumentOllirGenerator (for method calls arguments), DotLinkedOllirGenerator (for chained expressions, such as length or invocations), ExprOllirGenerator (for a broad range of expressions), MethodBodyOllirGenerator (for method bodies parsing) and OllirGenerator (the parent of all, that starts the ollir visit).
+- Pros: Covers a wide range of scenarios, from basic cases to more specific instructions (given the recursive visits). 
+- CONS: Since the tree structure, in some cases is too dependent on the operation/instruction itself, it's easy to lose context of the expression where the node is embedded in, specially when having to move it to a different visitor class. The modular approach also requires some code redundancy. 
+
+#### Jasmin
+
+### PROS: (Identify the most positive aspects of your tool)
+### CONS: (Identify the most negative aspects of your tool)
+
+
+
+
+
+
+
+
+
 For this project, you need to install [Java](https://jdk.java.net/), [Gradle](https://gradle.org/install/), and [Git](https://git-scm.com/downloads/) (and optionally, a [Git GUI client](https://git-scm.com/downloads/guis), such as TortoiseGit or GitHub Desktop). Please check the [compatibility matrix](https://docs.gradle.org/current/userguide/compatibility.html) for Java and Gradle versions.
 
 ## Project setup
