@@ -47,25 +47,61 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         return false;
     }
 
-    private String visitMethodCalls(JmmNode node, List<Report> reports) {
+    private boolean isExtension(JmmNode node) {
+        return node.getAncestor("ClassDecl").get().getAttributes().contains("extended_class");
+    }
 
+    private boolean isImported(JmmNode node, JmmNode caller) {
+        String id = caller.getAttributes().contains("name") ? caller.get("name") : "";
+        if (symbolTable.getImports().contains(id)) {
+            return true;
+        }
+        String type = getVariableType(id, node.getAncestor("MethodDeclaration").get().get("name"));
+        if (!(type == null)) {
+            return symbolTable.getImports().contains(type);
+        }
+
+        return false;
+    }
+
+    private String visitMethodCalls(JmmNode node, List<Report> reports) {
+        // Check if the method exists or is from imported/super class
         int idx = node.getIndexOfSelf();
         JmmNode caller = node.getJmmParent().getChildren().get(idx - 1);
-        String id = caller.getAttributes().contains("name") ? caller.get("name") : "";
         if (isCallingFromSelf(node, caller)) {
             if (!symbolTable.hasMethod(node.get("name"))) {
-                // Check if class is extended
-                if (!node.getAncestor("ClassDecl").get().getAttributes().contains("extended_class")) {
+                if (!isExtension(node)) {
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                             Integer.parseInt(node.get("col")), "Call to undeclared method in class"));
                 }
+            } else {
+                // Check for arguments
+                if (!hasCorrectArguments(node)) {
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt((node.get("line"))),
+                            Integer.parseInt(node.get("col")), "Number of arguments does not match method " +
+                            "declaration"));
+                }
             }
-        } else if (!symbolTable.getImports().contains(id)) {
+        } else if (!isImported(node, caller)) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                     Integer.parseInt(node.get("col")), "Cannot call method. Class was not imported"));
         }
 
         return "";
+    }
+
+    /**
+     * Checks if a method defined in the file has the correct arguments amount
+     *
+     * @param node Method being called
+     * @return true if there are the correct amount of arguments, false
+     * otherwise
+     */
+    private boolean hasCorrectArguments(JmmNode node) {
+        List<Symbol> parameters = symbolTable.getParameters(node.get("name"));
+        List<JmmNode> args = node.getChildren();
+
+        return parameters.size() == args.size();
     }
 
     /**
@@ -87,7 +123,7 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
             } else {
                 boolean isLocalVar = symbolTable.hasLocalVariable(methodSignature, varID);
                 if (isLocalVar) {
-                    return symbolTable.getLocalVariables(methodSignature, varID).getType().getName();
+                    return symbolTable.getLocalVariable(methodSignature, varID).getType().getName();
                 } else {
                     return null;
                 }
