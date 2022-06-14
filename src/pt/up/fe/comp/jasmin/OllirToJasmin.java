@@ -425,6 +425,7 @@ public class OllirToJasmin {
         }
 
         StringBuilder instructionCode = new StringBuilder();
+        instructionCode.append(loadElement(instruction.getOperand(), varTable));
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
         switch (returnType){
             case INT32:
