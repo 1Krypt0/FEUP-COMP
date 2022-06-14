@@ -252,13 +252,15 @@ public class OllirToJasmin {
             case invokespecial:
                 return getInvokeSpecialCode(instruction);
             case NEW:
-                throw new NotImplementedException("NEW method invocation");
+                return getNewInvocationCode(instruction);
             case arraylength:
+                //simply load element into a register + array length
                 throw new NotImplementedException("arraylength method invocation");
             case ldc:
+                // TODO: simply load element into a register
                 throw new NotImplementedException("ldc method invocation");
             default:
-                throw new NotImplementedException("Uknown method invocation type: " + methodInvocationType);
+                throw new NotImplementedException("Unknown method invocation type: " + methodInvocationType);
         }
     }
 
@@ -325,6 +327,39 @@ public class OllirToJasmin {
 
         instructionCode.append(getJasminType(instruction.getReturnType())).append("\n");
 
+        return instructionCode.toString();
+    }
+
+    public String getNewInvocationCode(CallInstruction instruction){
+        StringBuilder instructionCode = new StringBuilder();
+
+        ElementType returnType = instruction.getReturnType().getTypeOfElement();
+        switch (returnType){
+            case ARRAYREF:
+                // TODO: Load operands
+                ElementType arrayType = instruction.getListOfOperands().get(0).getType().getTypeOfElement();
+                String arrayTypeString = "";
+                switch (arrayType){
+                    case INT32:
+                        arrayTypeString = "int";
+                        break;
+                    case STRING:
+                        arrayTypeString = "java/lang/String";
+                        break;
+                    default:
+                        throw new NotImplementedException("Uknown array type for new instruction " + arrayType);
+                }
+                instructionCode.append("\tnewarray ").append(arrayTypeString).append("\n");
+                break;
+            case OBJECTREF:
+                // TODO: load operands
+                String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
+                instructionCode.append("\tnew ").append(instructionClassName).append("\n");
+                instructionCode.append("\tdup\n");  //push duplicate
+                break;
+            default:
+                throw new NotImplementedException("Unknown NEW invocation return type: " + returnType);
+        }
         return instructionCode.toString();
     }
 
