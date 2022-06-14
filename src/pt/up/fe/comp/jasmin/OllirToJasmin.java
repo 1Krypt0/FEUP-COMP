@@ -89,7 +89,6 @@ public class OllirToJasmin {
     }
 
     private String getFullyQualifiedName(String className){
-
         if (className == null){
             throw new RuntimeException("Null class has no super class");
         }
@@ -318,6 +317,11 @@ public class OllirToJasmin {
     private String getStaticInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
 
+        for (Element toLoad : instruction.getListOfOperands())
+            instructionCode.append(loadElement(toLoad, varTable));
+
+        instructionCode.append("\t.limit stack 99\n");
+
         instructionCode.append("invokestatic ");
 
         String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
@@ -337,6 +341,14 @@ public class OllirToJasmin {
 
     private String getVirtualInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
+
+        Element firstVirtualInstruction = instruction.getFirstArg();
+        instructionCode.append(loadElement(firstVirtualInstruction, varTable));
+
+        for (Element toLoad : instruction.getListOfOperands())
+            instructionCode.append(loadElement(toLoad, varTable));
+
+        instructionCode.append("\t.limit stack 99\n");
 
         instructionCode.append("invokevirtual ");
 
@@ -358,11 +370,16 @@ public class OllirToJasmin {
     private String getInvokeSpecialCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
 
+        Element firstSpecialInstruction = instruction.getFirstArg();
+        instructionCode.append(loadElement(firstSpecialInstruction, varTable));
+
+        instructionCode.append("\t.limit stack 99\n");
+
         instructionCode.append("invokespecial ");
 
         String instructionClassName = "";
         if(instruction.getFirstArg().getType().getTypeOfElement() == THIS){
-            instructionClassName = getFullyQualifiedName(getSuperClassName());
+            instructionClassName = getSuperClassName();
         }
         else{
             instructionClassName = instruction.getClass().getName();
@@ -384,10 +401,13 @@ public class OllirToJasmin {
     private String getNewInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
 
+        for (Element toLoad : instruction.getListOfOperands()) {
+            instructionCode.append(loadElement(toLoad, varTable));
+        }
+
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
         switch (returnType){
             case ARRAYREF:
-                // TODO: load operands
                 ElementType arrayType = instruction.getListOfOperands().get(0).getType().getTypeOfElement();
                 String arrayTypeString = "";
                 switch (arrayType){
@@ -403,7 +423,6 @@ public class OllirToJasmin {
                 instructionCode.append("\tnewarray ").append(arrayTypeString).append("\n");
                 break;
             case OBJECTREF:
-                // TODO: load operands
                 String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
                 instructionCode.append("\tnew ").append(instructionClassName).append("\n");
                 instructionCode.append("\tdup\n");  //push duplicate
