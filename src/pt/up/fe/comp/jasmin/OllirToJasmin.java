@@ -192,6 +192,14 @@ public class OllirToJasmin {
         return methodParametersString.toString();
     }
 
+    private String getMethodCode(Method method) {
+        var methodCode = new StringBuilder();
+        methodCode.append(getMethodHeader(method));
+        methodCode.append(getMethodBody(method));
+        methodCode.append(".end method\n\n");
+        return methodCode.toString();
+    }
+
     private String getMethodHeader(Method method){
         StringBuilder headerCode = new StringBuilder();
 
@@ -224,9 +232,25 @@ public class OllirToJasmin {
         return headerCode.toString();
     }
 
-    private String getInstructionCode(Instruction instruction){
+    private String getMethodBody(Method method){
+        StringBuilder bodyCode = new StringBuilder();
+
+        bodyCode.append("\t.limit stack 99\n");
+        bodyCode.append("\t.limit locals 99\n");
+
+        HashMap<String, Descriptor> varTable = method.getVarTable();
+
+        for(Instruction inst : method.getInstructions()){
+            bodyCode.append("\t").append(getInstructionCode(inst, varTable));
+        }
+
+        return bodyCode.toString();
+    }
+
+    private String getInstructionCode(Instruction instruction, HashMap<String, Descriptor> varTable){
         InstructionType instructionType = instruction.getInstType();
 
+        /*
         FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
         instructionMap.put(CallInstruction.class, this::getCallInstructionCode);
         instructionMap.put(AssignInstruction.class, this::getAssignInstructionCode);
@@ -238,21 +262,47 @@ public class OllirToJasmin {
         instructionMap.put(GetFieldInstruction.class, this::getGetFieldInstructionCode);
 
         return instructionMap.apply(instruction);
+        */
+        switch (instructionType){
+            case CALL:
+                return getCallInstructionCode( (CallInstruction) instruction, varTable);
+            case ASSIGN:
+                return getAssignInstructionCode( (AssignInstruction) instruction, varTable);
+            case RETURN:
+                return getReturnInstructionCode( (ReturnInstruction) instruction, varTable);
+            case UNARYOPER:
+                return getSingleOpInstructionCode( (SingleOpInstruction) instruction, varTable);
+                /*
+            case SingleOpCondInstruction.class:
+                return;
+                */
+            case BINARYOPER:
+                return getBinaryOpInstructionCode( (BinaryOpInstruction) instruction, varTable);
+            case PUTFIELD:
+                return getPutFieldInstructionCode( (PutFieldInstruction) instruction, varTable);
+            case GETFIELD:
+                return getGetFieldInstructionCode( (GetFieldInstruction) instruction, varTable);
+                /*
+            case GOTO:
+                return
+                */
+        }
     }
 
-    private String getCallInstructionCode(CallInstruction instruction){
+    private String getCallInstructionCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
+
         CallType methodInvocationType = instruction.getInvocationType();
         switch (methodInvocationType){
             case invokestatic:
-                return getStaticInvocationCode(instruction);
+                return getStaticInvocationCode(instruction, varTable);
             case invokevirtual:
-                return getVirtualInvocationCode(instruction);
+                return getVirtualInvocationCode(instruction, varTable);
             case invokeinterface:
                 throw new NotImplementedException("invokeinterface method invocation");
             case invokespecial:
-                return getInvokeSpecialCode(instruction);
+                return getInvokeSpecialCode(instruction, varTable);
             case NEW:
-                return getNewInvocationCode(instruction);
+                return getNewInvocationCode(instruction, varTable);
             case arraylength:
                 //simply load element into a register + array length
                 throw new NotImplementedException("arraylength method invocation");
@@ -264,7 +314,7 @@ public class OllirToJasmin {
         }
     }
 
-    private String getStaticInvocationCode(CallInstruction instruction){
+    private String getStaticInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
 
         instructionCode.append("invokestatic ");
@@ -284,7 +334,7 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    private String getVirtualInvocationCode(CallInstruction instruction){
+    private String getVirtualInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
 
         instructionCode.append("invokevirtual ");
@@ -304,7 +354,7 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    private String getInvokeSpecialCode(CallInstruction instruction){
+    private String getInvokeSpecialCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
 
         instructionCode.append("invokespecial ");
@@ -330,13 +380,13 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    private String getNewInvocationCode(CallInstruction instruction){
+    private String getNewInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
 
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
         switch (returnType){
             case ARRAYREF:
-                // TODO: Load operands
+                // TODO: load operands
                 ElementType arrayType = instruction.getListOfOperands().get(0).getType().getTypeOfElement();
                 String arrayTypeString = "";
                 switch (arrayType){
@@ -363,49 +413,28 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    private String getAssignInstructionCode(AssignInstruction instruction){
+    private String getAssignInstructionCode(AssignInstruction instruction, HashMap<String, Descriptor> varTable){
         throw new NotImplementedException("AssignInstruction");
     }
 
-    private String getReturnInstructionCode(ReturnInstruction instruction){
+    private String getReturnInstructionCode(ReturnInstruction instruction, HashMap<String, Descriptor> varTable){
         throw new NotImplementedException("ReturnInstruction");
     }
 
-    private String getSingleOpInstructionCode(SingleOpInstruction instruction){
+    private String getSingleOpInstructionCode(SingleOpInstruction instruction, HashMap<String, Descriptor> varTable){
         throw new NotImplementedException("SingleOpInstruction");
     }
 
-    private String getBinaryOpInstructionCode(BinaryOpInstruction instruction){
+    private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
         throw new NotImplementedException("BinaryOpInstruction");
     }
 
-    private String getPutFieldInstructionCode(PutFieldInstruction instruction){
+    private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
         throw new NotImplementedException("PutFieldInstruction");
     }
 
-    private String getGetFieldInstructionCode(GetFieldInstruction instruction){
+    private String getGetFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
         throw new NotImplementedException("GetFieldInstruction");
-    }
-
-    private String getMethodBody(Method method){
-        StringBuilder bodyCode = new StringBuilder();
-
-        bodyCode.append("\t.limit stack 99\n");
-        bodyCode.append("\t.limit locals 99\n");
-
-        for(Instruction inst : method.getInstructions()){
-            bodyCode.append("\t").append(getInstructionCode(inst));
-        }
-
-        return bodyCode.toString();
-    }
-
-    private String getMethodCode(Method method) {
-        var methodCode = new StringBuilder();
-        methodCode.append(getMethodHeader(method));
-        methodCode.append(getMethodBody(method));
-        methodCode.append(".end method\n\n");
-        return methodCode.toString();
     }
 
     private String loadElement(Element toLoad, HashMap<String, Descriptor> varTable){
@@ -414,7 +443,8 @@ public class OllirToJasmin {
             return loadLiteral(toLoad);
         }
         else{
-            throw new NotImplementedException("loading non-literals");
+            //TODO missing this
+            return loadNonLiteral(toLoad, varTable);
         }
     }
 
@@ -454,5 +484,18 @@ public class OllirToJasmin {
         literalCode.append(literalString).append("\n");
 
         return literalCode.toString();
+    }
+
+    private String loadNonLiteral(Element toLoad, HashMap<String, Descriptor> varTable){
+        /*
+        ElementType literalType = toLoad.getType().getTypeOfElement();
+        switch (literalType){
+            case ARRAYREF:
+                break;
+            case OBJECTREF:
+                break;
+        }
+         */
+        throw new NotImplementedException("loading non-literals");
     }
 }
