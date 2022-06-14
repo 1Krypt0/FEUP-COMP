@@ -286,6 +286,8 @@ public class OllirToJasmin {
             case GOTO:
                 return
                 */
+            default:
+                throw new RuntimeException("Unknown instruction type " + instructionType);
         }
     }
 
@@ -381,7 +383,7 @@ public class OllirToJasmin {
     }
 
     private String getNewInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
-        StringBuilder instructionCode = new StringBuilder()
+        StringBuilder instructionCode = new StringBuilder();
 
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
         switch (returnType){
@@ -414,6 +416,7 @@ public class OllirToJasmin {
     }
 
     private String getAssignInstructionCode(AssignInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: write this
         throw new NotImplementedException("AssignInstruction");
     }
 
@@ -434,8 +437,8 @@ public class OllirToJasmin {
             default:
                 throw new NotImplementedException("Unknown NEW invocation return type: " + returnType);
         }
-
         instructionCode.append("return\n");
+
         return instructionCode.toString();
     }
 
