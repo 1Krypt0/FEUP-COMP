@@ -121,8 +121,8 @@ public class OllirToJasmin {
         }
     }
 
-    // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
     private String getMethodAccessModifier(Method method){
+        // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
         AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
         switch (methodAccessModifier){
             case PUBLIC:
@@ -248,8 +248,6 @@ public class OllirToJasmin {
     }
 
     private String getInstructionCode(Instruction instruction, HashMap<String, Descriptor> varTable){
-        InstructionType instructionType = instruction.getInstType();
-
         /*
         FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
         instructionMap.put(CallInstruction.class, this::getCallInstructionCode);
@@ -263,6 +261,7 @@ public class OllirToJasmin {
 
         return instructionMap.apply(instruction);
         */
+        InstructionType instructionType = instruction.getInstType();
         switch (instructionType){
             case CALL:
                 return getCallInstructionCode( (CallInstruction) instruction, varTable);
