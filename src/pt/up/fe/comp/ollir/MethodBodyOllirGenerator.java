@@ -186,7 +186,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
             return String.format("%s%s.%s", variable, arrayAccess, OllirUtils.getCode(type));
         } else if (varScope.equals(Scope.FIELD)) {
             Type type = symbolTable.getVariableType(variable, methodName);
-            String tempVar = symbolTable.tempVar();
+            String tempVar = symbolTable.tempVar() + "." + OllirUtils.getCode(type);
 
             code.append(String.format("%s :=.%s getfield(this, %s.%s).%s;\n",
                     tempVar, OllirUtils.getCode(type), variable, OllirUtils.getCode(type), OllirUtils.getCode(type)));
@@ -298,7 +298,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
             // TODO: if left side is field then store instruction in temp var
             // see if it's necessary new(Class) vs 2 p.e. Literal/Id or complex instruction
             Type varType = symbolTable.getFieldType(varName);
-            String tempVar = symbolTable.tempVar();
+            String tempVar = symbolTable.tempVar() + "." + OllirUtils.getCode(varType);
             code.append(String.format("%s :=.%s %s;\n", tempVar, OllirUtils.getCode(varType), instruction));
             code.append(String.format("putfield(this, %s.%s , %s).V;\n",
                     varName, OllirUtils.getCode(varType), tempVar));
