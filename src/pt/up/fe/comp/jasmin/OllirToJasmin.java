@@ -30,9 +30,6 @@ public class OllirToJasmin {
         // Class Name
         classCode.append(".class public ").append(classUnit.getClassName()).append("\n\n");
 
-        //
-        // TODO: imports
-        //
         for (var import2 : classUnit.getImports()){
             classCode.append(".import ");
             classCode.append(import2.toString()).append("\n");
@@ -40,9 +37,7 @@ public class OllirToJasmin {
         classCode.append("\n");
 
         // Super Class and Constructor
-        // TODO: separate getting super and building the constructor
-        //              constructor can now be built using the standard method generation function
-        classCode.append(getClassSuper());
+        classCode.append(".super ").append(getSuperClassName()).append("\n\n");
 
         for (Field field : classUnit.getFields()){
             classCode.append("\t").append(getFieldCode(field)).append("\n");
@@ -116,21 +111,14 @@ public class OllirToJasmin {
         throw new RuntimeException("Could not find import for class " + className);
     }
 
-    public String getClassSuper(){
-        var classCode = new StringBuilder();
-
-        // Super Class
-        String superClassQualifiedName;
+    public String getSuperClassName(){
         var superClass = classUnit.getSuperClass();
         if(superClass == null){
-            superClassQualifiedName = "/java/lang/object";
+            return "/java/lang/object";
         }
         else{
-            superClassQualifiedName = getFullyQualifiedName(superClass);
+            return getFullyQualifiedName(superClass);
         }
-        classCode.append(".super ").append(superClassQualifiedName).append("\n\n");
-
-        return classCode.toString();
     }
 
     // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
@@ -258,7 +246,7 @@ public class OllirToJasmin {
             case invokestatic:
                 return getStaticInvocationCode(instruction);
             case invokevirtual:
-                throw new NotImplementedException("invokevirtual method invocation");
+                return getVirtualInvocationCode(instruction);
             case invokeinterface:
                 throw new NotImplementedException("invokeinterface method invocation");
             case invokespecial:
@@ -294,6 +282,26 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
+    public String getVirtualInvocationCode(CallInstruction instruction){
+        StringBuilder instructionCode = new StringBuilder();
+
+        instructionCode.append("invokevirtual ");
+
+        String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
+        String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral().replace("\"", "");
+        instructionCode.append(getFullyQualifiedName(instructionClassName)).append("/").append(instructionName);
+
+        instructionCode.append("(");
+        for (Element operand : instruction.getListOfOperands()){
+            instructionCode.append(getJasminType(operand.getType()));
+        }
+        instructionCode.append(")");
+
+        instructionCode.append(getJasminType(instruction.getReturnType())).append("\n");
+
+        return instructionCode.toString();
+    }
+
     public String getInvokeSpecialCode(CallInstruction instruction){
         StringBuilder instructionCode = new StringBuilder();
 
@@ -301,7 +309,7 @@ public class OllirToJasmin {
 
         String instructionClassName = "";
         if(instruction.getFirstArg().getType().getTypeOfElement() == THIS){
-            instructionClassName = getClassSuper();
+            instructionClassName = getFullyQualifiedName(getSuperClassName());
         }
         else{
             instructionClassName = instruction.getClass().getName();
