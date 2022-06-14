@@ -463,7 +463,6 @@ public class OllirToJasmin {
     }
 
     private String loadElement(Element toLoad, HashMap<String, Descriptor> varTable){
-        // e.g. 1, "abc", etc...
         if (toLoad.isLiteral()){
             return loadLiteral(toLoad);
         }
@@ -473,6 +472,8 @@ public class OllirToJasmin {
     }
 
     private String loadLiteral(Element toLoad){
+        // e.g. 1, "abc", etc...
+
         StringBuilder literalCode = new StringBuilder("\t");
         String literalString = ((LiteralElement) toLoad).getLiteral();
 
@@ -512,13 +513,14 @@ public class OllirToJasmin {
 
     private String loadNonLiteral(Element toLoad, HashMap<String, Descriptor> varTable){
         ElementType toLoadElementType = toLoad.getType().getTypeOfElement();
+        // TODO: check this warning: "HashMap<String, Descriptor>' may not contain keys of type 'Operand'"
         Descriptor toLoadDescriptor = varTable.get((Operand) toLoad);
         ElementType descriptorType = toLoadDescriptor.getVarType().getTypeOfElement();
 
         System.out.println("element | descriptor");
         System.out.println(toLoad.toString() + " | " + toLoadDescriptor.toString());
 
-        //?aload� ; <a b ...> -> <b[a] ... >
+        //?aload ; <a b ...> -> <b[a] ... >
         //? = i | f | d | l | a | b (= byte or boolean)`
         if(toLoadElementType != ARRAYREF && descriptorType == ARRAYREF){
             StringBuilder nonLiteralCode = new StringBuilder();
@@ -533,6 +535,7 @@ public class OllirToJasmin {
 
     private String loadDescriptor(Descriptor toLoad){
         ElementType descriptorType = toLoad.getVarType().getTypeOfElement();
+        //aload_0
         if (descriptorType == THIS){
             return "\taload_0\n";
         }
@@ -551,6 +554,8 @@ public class OllirToJasmin {
                 default:
                     throw new RuntimeException("Unknown descriptor type " + descriptorType);
             }
+
+            //a/i + load_1/load_2/load_3/load x
             descriptorCode.append("load");
             if(descriptorRegister <= 3){
                 descriptorCode.append("_");
