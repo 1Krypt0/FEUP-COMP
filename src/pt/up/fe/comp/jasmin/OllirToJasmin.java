@@ -260,7 +260,7 @@ public class OllirToJasmin {
                 // TODO: simply load element into a register
                 throw new NotImplementedException("ldc method invocation");
             default:
-                throw new NotImplementedException("Unknown method invocation type: " + methodInvocationType);
+                throw new RuntimeException("Unknown method invocation type: " + methodInvocationType);
         }
     }
 
@@ -347,7 +347,7 @@ public class OllirToJasmin {
                         arrayTypeString = "java/lang/String";
                         break;
                     default:
-                        throw new NotImplementedException("Uknown array type for new instruction " + arrayType);
+                        throw new RuntimeException("Uknown array type for new instruction " + arrayType);
                 }
                 instructionCode.append("\tnewarray ").append(arrayTypeString).append("\n");
                 break;
