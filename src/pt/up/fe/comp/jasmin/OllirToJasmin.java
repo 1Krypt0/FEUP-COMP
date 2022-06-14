@@ -253,8 +253,6 @@ public class OllirToJasmin {
     }
 
     public String getCallInstructionCode(CallInstruction instruction){
-        StringBuilder instructionCode = new StringBuilder();
-
         CallType methodInvocationType = instruction.getInvocationType();
         switch (methodInvocationType){
             case invokestatic:
@@ -264,8 +262,7 @@ public class OllirToJasmin {
             case invokeinterface:
                 throw new NotImplementedException("invokeinterface method invocation");
             case invokespecial:
-                //throw new NotImplementedException("invokespecial method invocation");
-                return "";
+                return getInvokeSpecialCode(instruction);
             case NEW:
                 throw new NotImplementedException("NEW method invocation");
             case arraylength:
@@ -285,6 +282,32 @@ public class OllirToJasmin {
         String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
         String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral().replace("\"", "");
         instructionCode.append(getFullyQualifiedName(instructionClassName)).append("/").append(instructionName);
+
+        instructionCode.append("(");
+        for (Element operand : instruction.getListOfOperands()){
+            instructionCode.append(getJasminType(operand.getType()));
+        }
+        instructionCode.append(")");
+
+        instructionCode.append(getJasminType(instruction.getReturnType())).append("\n");
+
+        return instructionCode.toString();
+    }
+
+    public String getInvokeSpecialCode(CallInstruction instruction){
+        StringBuilder instructionCode = new StringBuilder();
+
+        instructionCode.append("invokespecial ");
+
+        String instructionClassName = "";
+        if(instruction.getFirstArg().getType().getTypeOfElement() == THIS){
+            instructionClassName = getClassSuper();
+        }
+        else{
+            instructionClassName = instruction.getClass().getName();
+        }
+
+        instructionCode.append(instructionClassName).append("/<init>");
 
         instructionCode.append("(");
         for (Element operand : instruction.getListOfOperands()){
@@ -324,11 +347,11 @@ public class OllirToJasmin {
     public String getMethodBody(Method method){
         StringBuilder bodyCode = new StringBuilder();
 
-        bodyCode.append(".limit stack 99\n");
-        bodyCode.append(".limit locals 99\n");
+        bodyCode.append("\t.limit stack 99\n");
+        bodyCode.append("\t.limit locals 99\n");
 
         for(Instruction inst : method.getInstructions()){
-            bodyCode.append(getInstructionCode(inst));
+            bodyCode.append("\t").append(getInstructionCode(inst));
         }
 
         return bodyCode.toString();
