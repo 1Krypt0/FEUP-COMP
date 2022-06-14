@@ -16,11 +16,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
-    private final List<Report> reports;
     private final ProgramSymbolTable symbolTable;
 
     public TypeAnalyser(ProgramSymbolTable symbolTable) {
-        reports = new ArrayList<>();
         this.symbolTable = symbolTable;
         addVisit(AstNode.I_D, this::visitIDs);
         addVisit(AstNode.Bin_Op, this::visitOps);
@@ -38,14 +36,30 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         addVisit(AstNode.Dot_Linked, this::visitDotLinked);
         addVisit(AstNode.Return_Statement, this::visitReturn);
         addVisit(AstNode.Length, this::visitLength);
+        addVisit(AstNode.This, this::visitThis);
         setDefaultVisit(this::defaultVisit);
     }
 
-    private String visitDotLinked(JmmNode node, List<Report> reports) {
-        Type type = symbolTable.getVariableType(node.getChildren().get(0).get("name"),
-                node.getAncestor("MethodDeclaration").get().get("name"));
+    private String visitThis(JmmNode node, List<Report> reports) {
+        return symbolTable.getClassName();
+    }
 
-        return visit(node.getChildren().get(1), reports);
+    private String visitDotLinked(JmmNode node, List<Report> reports) {
+        String callerType = visit(node.getChildren().get(0), reports);
+        JmmNode calledMethod = node.getChildren().get(1);
+
+        // method from class in file
+        if (symbolTable.getClassName().equals(callerType) && symbolTable.getSuper() == null) {
+            if (!symbolTable.hasMethod(calledMethod.get("name"))) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                        Integer.parseInt(node.get("col")),
+                        "Trying to call undefined method"));
+            }
+        } else if ((symbolTable.getClassName().equals(callerType) && symbolTable.getSuper() != null) || symbolTable.isImport(callerType) || callerType.equals("valid")) {
+            return "valid";
+        }
+
+        return visit(calledMethod, reports);
     }
 
     private String visitMethodCall(JmmNode node, List<Report> reports) {
@@ -71,7 +85,9 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
             return type.isArray() ? "array" : type.getName();
         }
         if (!node.getAncestor("ReturnStatement").equals(Optional.empty())) {
-            Type returnType = symbolTable.getReturnType(node.getAncestor("MethodDeclaration").get().get("name"));
+            JmmNode ancestor = node.getAncestor("MethodDeclaration").isPresent() ?
+                    node.getAncestor("MethodDeclaration").get() : node.getAncestor("Main").get();
+            Type returnType = symbolTable.getReturnType(ancestor.get("name"));
             return returnType.isArray() ? "array" : returnType.getName();
         }
         return "";
@@ -112,7 +128,9 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
      */
     private String visitIDs(JmmNode node, List<Report> reports) {
         final String name = node.get("name");
-        String methodName = node.getAncestor("MethodDeclaration").get().get("name");
+        JmmNode ancestor = node.getAncestor("MethodDeclaration").isPresent() ?
+                node.getAncestor("MethodDeclaration").get() : node.getAncestor("Main").get();
+        String methodName = ancestor.get("name");
 
         if (variableExists(name, methodName)) {
             Type type = symbolTable.getVariableType(name, methodName);
@@ -124,8 +142,11 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
             return type.isArray() ? "array" : type.getName();
         }
 
-        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
-                Integer.parseInt(node.get("col")), "Variable " + name + " was not declared"));
+        if (!symbolTable.isImport(name)) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                    Integer.parseInt(node.get("col")), "Variable " + name + " was not declared"));
+        }
+
 
         return "";
     }
@@ -165,32 +186,38 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
                     "Type mismatch in operation. Can't match " + leftOperandType + " and " + rightOperandType));
         }
 
+        String opType;
         switch (node.get("op")) {
             case "add":
             case "sub":
             case "mult":
             case "div":
+                opType = "int";
+                break;
+            case "lt":
                 if (!(leftOperandType.equals("int") && rightOperandType.equals("int"))) {
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                             Integer.parseInt(node.get("col")),
                             "Expression expected two integers"));
                 }
+                opType = "boolean";
                 break;
             case "and":
-            case "lt":
                 if (!(leftOperandType.equals("boolean") && rightOperandType.equals("boolean"))) {
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                             Integer.parseInt(node.get("col")),
                             "Expression expected two booleans"));
                 }
+                opType = "boolean";
                 break;
             default:
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                         Integer.parseInt(node.get("col")), "Unknown operation type"));
+                opType = "";
         }
 
-        node.put("type", leftOperandType);
-        return leftOperandType;
+        node.put("type", opType);
+        return opType;
     }
 
     private String visitNegation(JmmNode node, List<Report> reports) {
@@ -218,9 +245,9 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         }
 
         if (parentNode.getKind().equals("ID")) {
-            Type type = symbolTable.getVariableType(parentNode.get("name"),
-                    node.getAncestor("MethodDeclaration").get().get("name"
-                    ));
+            JmmNode ancestor = node.getAncestor("MethodDeclaration").isPresent() ?
+                    node.getAncestor("MethodDeclaration").get() : node.getAncestor("Main").get();
+            Type type = symbolTable.getVariableType(parentNode.get("name"), ancestor.get("name"));
             if (!type.isArray()) {
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                         Integer.parseInt(node.get("col")), "Trying to access object that is not an array"));
@@ -241,30 +268,49 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
 
     private String visitReturn(JmmNode node, List<Report> reports) {
         String expressionType = visit(node.getChildren().get(0), reports);
-        Type returnType = symbolTable.getReturnType(node.getAncestor("MethodDeclaration").get().get("name"));
-        String methodReturnType = returnType.isArray() ? "array" : returnType.getName();
-        if (!expressionType.equals(methodReturnType)) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
-                    Integer.parseInt(node.get("col")),
-                    "Invalid return type. Expected " + methodReturnType + " and got " + expressionType));
+        if (!expressionType.equals("valid")) {
+            JmmNode ancestor = node.getAncestor("MethodDeclaration").isPresent() ?
+                    node.getAncestor("MethodDeclaration").get() : node.getAncestor("Main").get();
+            Type returnType = symbolTable.getReturnType(ancestor.get("name"));
+            String methodReturnType = returnType.isArray() ? "array" : returnType.getName();
+            if (!expressionType.equals(methodReturnType)) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                        Integer.parseInt(node.get("col")),
+                        "Invalid return type. Expected " + methodReturnType + " and got " + expressionType));
+            }
         }
+
         return "";
     }
 
     private String visitAssign(JmmNode node, List<Report> reports) {
 
-        Type varType = symbolTable.getVariableType(node.get("name"), node.getAncestor("MethodDeclaration").get().get(
+        JmmNode ancestor = node.getAncestor("MethodDeclaration").isPresent() ?
+                node.getAncestor("MethodDeclaration").get() : node.getAncestor("Main").get();
+
+        if (ancestor.get("name").equals("main")) {
+            if (!symbolTable.isLocalVariable(node.get("name"), "main")) {
+                if (symbolTable.isField(node.get("name"))) {
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                            Integer.parseInt(node.get("col")), "Static method cannot access non-static variables"));
+                }
+            }
+        }
+
+        Type varType = symbolTable.getVariableType(node.get("name"), ancestor.get(
                 "name"));
         String type = varType.isArray() ? "array" : varType.getName();
         String assigned = visit(node.getChildren().get(0), reports);
 
-        if (!(symbolTable.isImport(type) && symbolTable.isImport(assigned))) {
-            if (!(type.equals(assigned))) {
-                if (!(symbolTable.getClassName().equals(assigned) && type.equals(symbolTable.getSuper()))) {
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
-                            Integer.parseInt(node.get("col")), "Invalid assignment of type " + assigned + " to " +
-                            "variable " +
-                            "of type " + type));
+        if (!assigned.equals("valid")) {
+            if (!(symbolTable.isImport(type) && symbolTable.isImport(assigned))) {
+                if (!(type.equals(assigned))) {
+                    if (!(symbolTable.getClassName().equals(assigned) && type.equals(symbolTable.getSuper()))) {
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                                Integer.parseInt(node.get("col")), "Invalid assignment of type " + assigned + " to " +
+                                "variable " +
+                                "of type " + type));
+                    }
                 }
             }
         }
@@ -279,9 +325,6 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         return "";
     }
 
-    public List<Report> getReports() {
-        return reports;
-    }
 
     private String getMethodName(JmmNode node) {
         if (node.getJmmParent().getKind().equals("MethodDeclaration")) {

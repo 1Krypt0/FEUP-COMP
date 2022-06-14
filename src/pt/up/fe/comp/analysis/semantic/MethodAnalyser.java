@@ -15,19 +15,13 @@ import java.util.List;
 
 public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
 
-    private final List<Report> reports;
     private final ProgramSymbolTable symbolTable;
 
 
     public MethodAnalyser(ProgramSymbolTable symbolTable) {
-        this.reports = new ArrayList<>();
         this.symbolTable = symbolTable;
         addVisit(AstNode.Method_Call, this::visitMethodCalls);
         setDefaultVisit(this::defaultVisit);
-    }
-
-    public List<Report> getReports() {
-        return this.reports;
     }
 
     /**
@@ -38,10 +32,12 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
      */
     private boolean isCallingFromSelf(JmmNode node, JmmNode caller) {
         String id = caller.getAttributes().contains("name") ? caller.get("name") : "";
+        JmmNode ancestor = node.getAncestor("MethodDeclaration").isPresent() ?
+                node.getAncestor("MethodDeclaration").get() : node.getAncestor("Main").get();
         if (caller.getKind().equals("This") || id.equals(symbolTable.getClassName())) {
             return true;
         } else if (caller.getKind().equals("ID")) { // Check if variable is of class in file
-            String varType = getVariableType(id, node.getAncestor("MethodDeclaration").get().get("name"));
+            String varType = getVariableType(id, ancestor.get("name"));
             if (!(varType == null)) {
                 return varType.equals(symbolTable.getClassName());
             }
@@ -54,11 +50,14 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
     }
 
     private boolean isImported(JmmNode node, JmmNode caller) {
+
         String id = caller.getAttributes().contains("name") ? caller.get("name") : "";
         if (symbolTable.getImports().contains(id)) {
             return true;
         }
-        String type = getVariableType(id, node.getAncestor("MethodDeclaration").get().get("name"));
+        JmmNode ancestor = node.getAncestor("MethodDeclaration").isPresent() ?
+                node.getAncestor("MethodDeclaration").get() : node.getAncestor("Main").get();
+        String type = getVariableType(id, ancestor.get("name"));
         if (!(type == null)) {
             return symbolTable.getImports().contains(type);
         }
@@ -70,7 +69,15 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         // Check if the method exists or is from imported/super class
         int idx = node.getIndexOfSelf();
         JmmNode caller = node.getJmmParent().getChildren().get(idx - 1);
+
         if (isCallingFromSelf(node, caller)) {
+
+            if (mainCallingByThis(node, caller)) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
+                        Integer.parseInt(node.get("col")), "Trying to call non-static method inside static method " +
+                        "main"));
+            }
+
             if (!symbolTable.hasMethod(node.get("name"))) {
                 if (!isExtension(node)) {
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
@@ -84,12 +91,16 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
                             "declaration"));
                 }
             }
-        } else if (!isImported(node, caller)) {
+        } else if (!isImported(node, caller) && !caller.getKind().equals("DotLinked")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                     Integer.parseInt(node.get("col")), "Cannot call method. Class was not imported"));
         }
 
         return "";
+    }
+
+    private boolean mainCallingByThis(JmmNode node, JmmNode caller) {
+        return caller.getKind().equals("This") && node.getAncestor("Main").isPresent();
     }
 
     /**
@@ -115,22 +126,19 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
      * @return The type of the variable if the variable is found, null otherwise
      */
     private String getVariableType(String varID, String methodSignature) {
+        boolean isLocalVar = symbolTable.hasLocalVariable(methodSignature, varID);
+        if (isLocalVar) {
+            return symbolTable.getLocalVariable(methodSignature, varID).getType().getName();
+        }
+        boolean isParameter = symbolTable.hasParameter(methodSignature, varID);
+        if (isParameter) {
+            return symbolTable.getMethodParameter(methodSignature, varID).getType().getName();
+        }
         boolean isField = symbolTable.hasField(varID);
         if (isField) {
             return symbolTable.getField(varID).getType().getName();
-        } else {
-            boolean isParameter = symbolTable.hasParameter(methodSignature, varID);
-            if (isParameter) {
-                return symbolTable.getMethodParameter(methodSignature, varID).getType().getName();
-            } else {
-                boolean isLocalVar = symbolTable.hasLocalVariable(methodSignature, varID);
-                if (isLocalVar) {
-                    return symbolTable.getLocalVariable(methodSignature, varID).getType().getName();
-                } else {
-                    return null;
-                }
-            }
         }
+        return null;
     }
 
 
