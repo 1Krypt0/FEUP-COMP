@@ -52,7 +52,7 @@ public class OllirToJasmin {
     }
 
 
-    public String getFieldCode(Field field){
+    private String getFieldCode(Field field){
         StringBuilder fieldCode = new StringBuilder();
 
         fieldCode.append("\t.field");
@@ -88,7 +88,7 @@ public class OllirToJasmin {
         return fieldCode.toString();
     }
 
-    public String getFullyQualifiedName(String className){
+    private String getFullyQualifiedName(String className){
 
         if (className == null){
             throw new RuntimeException("Null class has no super class");
@@ -111,7 +111,7 @@ public class OllirToJasmin {
         throw new RuntimeException("Could not find import for class " + className);
     }
 
-    public String getSuperClassName(){
+    private String getSuperClassName(){
         var superClass = classUnit.getSuperClass();
         if(superClass == null){
             return "/java/lang/object";
@@ -122,7 +122,7 @@ public class OllirToJasmin {
     }
 
     // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
-    public String getMethodAccessModifier(Method method){
+    private String getMethodAccessModifier(Method method){
         AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
         switch (methodAccessModifier){
             case PUBLIC:
@@ -138,7 +138,7 @@ public class OllirToJasmin {
         throw new RuntimeException("Could not get access modifier for method " + method.getMethodName());
     }
 
-    public String getJasminElementType(ElementType elementType){
+    private String getJasminElementType(ElementType elementType){
         switch (elementType) {
             case INT32:
                 return "I";
@@ -153,7 +153,7 @@ public class OllirToJasmin {
         }
     }
 
-    public String getJasminType(Type type){
+    private String getJasminType(Type type){
         ElementType elementType = type.getTypeOfElement();
         StringBuilder typeDescriptor = new StringBuilder();
 
@@ -180,7 +180,7 @@ public class OllirToJasmin {
         */
     }
 
-    public String getMethodParameters(Method method){
+    private String getMethodParameters(Method method){
         StringBuilder methodParametersString = new StringBuilder();
 
         ArrayList<Element> methodParameters = method.getParams();
@@ -192,7 +192,7 @@ public class OllirToJasmin {
         return methodParametersString.toString();
     }
 
-    public String getMethodHeader(Method method){
+    private String getMethodHeader(Method method){
         StringBuilder headerCode = new StringBuilder();
 
         headerCode.append(".method ").append(getMethodAccessModifier(method));
@@ -224,7 +224,7 @@ public class OllirToJasmin {
         return headerCode.toString();
     }
 
-    public String getInstructionCode(Instruction instruction){
+    private String getInstructionCode(Instruction instruction){
         InstructionType instructionType = instruction.getInstType();
 
         FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
@@ -240,7 +240,7 @@ public class OllirToJasmin {
         return instructionMap.apply(instruction);
     }
 
-    public String getCallInstructionCode(CallInstruction instruction){
+    private String getCallInstructionCode(CallInstruction instruction){
         CallType methodInvocationType = instruction.getInvocationType();
         switch (methodInvocationType){
             case invokestatic:
@@ -264,7 +264,7 @@ public class OllirToJasmin {
         }
     }
 
-    public String getStaticInvocationCode(CallInstruction instruction){
+    private String getStaticInvocationCode(CallInstruction instruction){
         StringBuilder instructionCode = new StringBuilder();
 
         instructionCode.append("invokestatic ");
@@ -284,7 +284,7 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    public String getVirtualInvocationCode(CallInstruction instruction){
+    private String getVirtualInvocationCode(CallInstruction instruction){
         StringBuilder instructionCode = new StringBuilder();
 
         instructionCode.append("invokevirtual ");
@@ -304,7 +304,7 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    public String getInvokeSpecialCode(CallInstruction instruction){
+    private String getInvokeSpecialCode(CallInstruction instruction){
         StringBuilder instructionCode = new StringBuilder();
 
         instructionCode.append("invokespecial ");
@@ -330,7 +330,7 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    public String getNewInvocationCode(CallInstruction instruction){
+    private String getNewInvocationCode(CallInstruction instruction){
         StringBuilder instructionCode = new StringBuilder();
 
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
@@ -363,31 +363,31 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    public String getAssignInstructionCode(AssignInstruction instruction){
+    private String getAssignInstructionCode(AssignInstruction instruction){
         throw new NotImplementedException("AssignInstruction");
     }
 
-    public String getReturnInstructionCode(ReturnInstruction instruction){
+    private String getReturnInstructionCode(ReturnInstruction instruction){
         throw new NotImplementedException("ReturnInstruction");
     }
 
-    public String getSingleOpInstructionCode(SingleOpInstruction instruction){
+    private String getSingleOpInstructionCode(SingleOpInstruction instruction){
         throw new NotImplementedException("SingleOpInstruction");
     }
 
-    public String getBinaryOpInstructionCode(BinaryOpInstruction instruction){
+    private String getBinaryOpInstructionCode(BinaryOpInstruction instruction){
         throw new NotImplementedException("BinaryOpInstruction");
     }
 
-    public String getPutFieldInstructionCode(PutFieldInstruction instruction){
+    private String getPutFieldInstructionCode(PutFieldInstruction instruction){
         throw new NotImplementedException("PutFieldInstruction");
     }
 
-    public String getGetFieldInstructionCode(GetFieldInstruction instruction){
+    private String getGetFieldInstructionCode(GetFieldInstruction instruction){
         throw new NotImplementedException("GetFieldInstruction");
     }
 
-    public String getMethodBody(Method method){
+    private String getMethodBody(Method method){
         StringBuilder bodyCode = new StringBuilder();
 
         bodyCode.append("\t.limit stack 99\n");
@@ -400,11 +400,59 @@ public class OllirToJasmin {
         return bodyCode.toString();
     }
 
-    public String getMethodCode(Method method){
+    private String getMethodCode(Method method) {
         var methodCode = new StringBuilder();
         methodCode.append(getMethodHeader(method));
         methodCode.append(getMethodBody(method));
         methodCode.append(".end method\n\n");
         return methodCode.toString();
+    }
+
+    private String loadElement(Element toLoad, HashMap<String, Descriptor> varTable){
+        // e.g. 1, "abc", etc...
+        if (toLoad.isLiteral()){
+            return loadLiteral(toLoad);
+        }
+        else{
+            throw new NotImplementedException("loading non-literals");
+        }
+    }
+
+    private String loadLiteral(Element toLoad){
+        StringBuilder literalCode = new StringBuilder("\t");
+        String literalString = ((LiteralElement) toLoad).getLiteral();
+
+        ElementType literalType = toLoad.getType().getTypeOfElement();
+        //int or bool literal
+        if(literalType == INT32 || literalType == BOOLEAN){
+            int literalVal = Integer.parseInt(literalString);
+            //can use iconst_m1, iconst_0, ...., iconst_5 if between -1 and 5
+            if(literalVal >= -1 && literalVal <= 5){
+                literalCode.append("iconst_");
+            }
+            //can use bipush for byte: -128 - 127
+            else if(literalVal >= -128 && literalVal <= 127){
+                literalCode.append("bipush ");
+            }
+            //can use sipush for short: -32768 - 32767
+            else if(literalVal >= -32768 && literalVal <= 32767){
+                literalCode.append("sipush ");
+            }
+            //ldc for bigger literals
+            else{
+                literalCode.append("ldc ");
+            }
+        }
+        // other literals use ldc
+        else {
+            literalCode.append("ldc ");
+        }
+
+        if(literalString == "-1")
+            literalString = "m1";
+
+        literalCode.append(literalString).append("\n");
+
+        return literalCode.toString();
     }
 }
