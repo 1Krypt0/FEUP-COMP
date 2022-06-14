@@ -79,7 +79,7 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
 
                 code.append(String.format("%s :=.%s getfield(this, %s.%s).%s ;\n",
                         caller_var, fieldTypeCode, name, fieldTypeCode, fieldTypeCode));
-            } else if (symbolTable.isImport(name) || symbolTable.getClassName().equals(name)) {
+            } else if (symbolTable.isImport(name) || scope.equals(Scope.CLASS)) {
                 caller_var = name;
                 variableType = new Type("Static Import", false);
             }
