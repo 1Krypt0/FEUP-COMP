@@ -468,7 +468,6 @@ public class OllirToJasmin {
             return loadLiteral(toLoad);
         }
         else{
-            //TODO missing this
             return loadNonLiteral(toLoad, varTable);
         }
     }
@@ -512,15 +511,56 @@ public class OllirToJasmin {
     }
 
     private String loadNonLiteral(Element toLoad, HashMap<String, Descriptor> varTable){
-        /*
-        ElementType literalType = toLoad.getType().getTypeOfElement();
-        switch (literalType){
-            case ARRAYREF:
-                break;
-            case OBJECTREF:
-                break;
+        ElementType toLoadElementType = toLoad.getType().getTypeOfElement();
+        Descriptor toLoadDescriptor = varTable.get((Operand) toLoad);
+        ElementType descriptorType = toLoadDescriptor.getVarType().getTypeOfElement();
+
+        System.out.println("element | descriptor");
+        System.out.println(toLoad.toString() + " | " + toLoadDescriptor.toString());
+
+        //?aload� ; <a b ...> -> <b[a] ... >
+        //? = i | f | d | l | a | b (= byte or boolean)`
+        if(toLoadElementType != ARRAYREF && descriptorType == ARRAYREF){
+            StringBuilder nonLiteralCode = new StringBuilder();
+            ArrayOperand arrayOperand = (ArrayOperand) toLoad;
+            Element index = arrayOperand.getIndexOperands().get(0);
+            nonLiteralCode.append(loadDescriptor(toLoadDescriptor)).append(loadElement(index, varTable));
+            nonLiteralCode.append("\tiaload\n");
+            return nonLiteralCode.toString();
         }
-         */
-        throw new NotImplementedException("loading non-literals");
+        return loadDescriptor(toLoadDescriptor);
+    }
+
+    private String loadDescriptor(Descriptor toLoad){
+        ElementType descriptorType = toLoad.getVarType().getTypeOfElement();
+        if (descriptorType == THIS){
+            return "\taload_0\n";
+        }
+        else{
+            StringBuilder descriptorCode = new StringBuilder();
+
+            descriptorCode.append("\t");
+            int descriptorRegister = toLoad.getVirtualReg();
+            switch (descriptorType){
+                case INT32:
+                    descriptorCode.append("\ti");
+                    break;
+                case BOOLEAN:
+                    descriptorCode.append("\ta");
+                    break;
+                default:
+                    throw new RuntimeException("Unknown descriptor type " + descriptorType);
+            }
+            descriptorCode.append("load");
+            if(descriptorRegister <= 3){
+                descriptorCode.append("_");
+            }
+            else{
+                descriptorCode.append(" ");
+            }
+            descriptorCode.append(descriptorRegister).append("\n");
+
+            return descriptorCode.toString();
+        }
     }
 }
