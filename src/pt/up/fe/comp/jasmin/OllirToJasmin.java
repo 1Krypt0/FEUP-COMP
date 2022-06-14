@@ -381,7 +381,7 @@ public class OllirToJasmin {
     }
 
     private String getNewInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
-        StringBuilder instructionCode = new StringBuilder();
+        StringBuilder instructionCode = new StringBuilder()
 
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
         switch (returnType){
@@ -408,7 +408,7 @@ public class OllirToJasmin {
                 instructionCode.append("\tdup\n");  //push duplicate
                 break;
             default:
-                throw new NotImplementedException("Unknown NEW invocation return type: " + returnType);
+                throw new RuntimeException("Unknown NEW invocation return type: " + returnType);
         }
         return instructionCode.toString();
     }
@@ -418,22 +418,44 @@ public class OllirToJasmin {
     }
 
     private String getReturnInstructionCode(ReturnInstruction instruction, HashMap<String, Descriptor> varTable){
-        throw new NotImplementedException("ReturnInstruction");
+        if(!instruction.hasReturnValue()){
+            return "\treturn\n";
+        }
+
+        StringBuilder instructionCode = new StringBuilder();
+        ElementType returnType = instruction.getReturnType().getTypeOfElement();
+        switch (returnType){
+            case INT32:
+                instructionCode.append("\ti");
+                break;
+            case BOOLEAN:
+                instructionCode.append("\ta");
+                break;
+            default:
+                throw new NotImplementedException("Unknown NEW invocation return type: " + returnType);
+        }
+
+        instructionCode.append("return\n");
+        return instructionCode.toString();
     }
 
     private String getSingleOpInstructionCode(SingleOpInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: write this
         throw new NotImplementedException("SingleOpInstruction");
     }
 
     private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: write this
         throw new NotImplementedException("BinaryOpInstruction");
     }
 
     private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: write this
         throw new NotImplementedException("PutFieldInstruction");
     }
 
     private String getGetFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: write this
         throw new NotImplementedException("GetFieldInstruction");
     }
 
