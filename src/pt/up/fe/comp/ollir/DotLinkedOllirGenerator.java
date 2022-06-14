@@ -135,14 +135,14 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
 
         String invoke = (variableType.getName() != null
                 && variableType.getName().contains("Static")) ? "invokestatic" : "invokevirtual";
-        String method_call = String.format("%s( %s , \"%s\" %s)%s;\n",
+        String method_call = String.format("%s( %s , \"%s\" %s)%s",
                 invoke, caller_var, methodName, argsString, returnTypeCode);
 
 
         if (returnType == null) return method_call;
 
         String temp_var = symbolTable.tempVar() + returnTypeCode;
-        code.append(String.format("%s :=%s %s", temp_var, returnTypeCode, method_call));
+        code.append(String.format("%s :=%s %s;\n", temp_var, returnTypeCode, method_call));
         return temp_var;
     }
 

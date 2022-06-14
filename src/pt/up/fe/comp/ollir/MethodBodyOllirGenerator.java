@@ -208,7 +208,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         if(!jmmNode.getJmmParent().getKind().equals("Assign")){
             instruction = dotLinkedOllirGenerator.visit(jmmNode, null);
             code.append(dotLinkedOllirGenerator.getCode());
-            code.append(instruction);
+            code.append(instruction).append(";\n");
             return "";
         }
         else {
