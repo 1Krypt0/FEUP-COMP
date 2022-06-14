@@ -40,7 +40,7 @@ public class OllirToJasmin {
         classCode.append(".super ").append(getSuperClassName()).append("\n\n");
 
         for (Field field : classUnit.getFields()){
-            classCode.append("\t").append(getFieldCode(field)).append("\n");
+            classCode.append(getFieldCode(field)).append("\n");
         }
 
         // Class Methods
@@ -59,7 +59,7 @@ public class OllirToJasmin {
 
         AccessModifiers fieldAccessModifier = field.getFieldAccessModifier();
         if(fieldAccessModifier == AccessModifiers.DEFAULT){
-            throw new RuntimeException("Invalid field access modifier found");
+            throw new RuntimeException("Invalid field access modifier found: " + fieldAccessModifier);
         }
         else{
             String accessModifierString = fieldAccessModifier.toString();
@@ -284,6 +284,8 @@ public class OllirToJasmin {
             case GOTO:
                 return
                 */
+            case NOPER:
+                throw new NotImplementedException("NOPER instruction type not implemented");
             default:
                 throw new RuntimeException("Unknown instruction type " + instructionType);
         }
@@ -446,8 +448,51 @@ public class OllirToJasmin {
     }
 
     private String getAssignInstructionCode(AssignInstruction instruction, HashMap<String, Descriptor> varTable){
-        //  TODO: write this
-        throw new NotImplementedException("AssignInstruction");
+        StringBuilder instructionCode = new StringBuilder();
+
+        Operand opDest = (Operand) instruction.getDest();
+        ElementType opType = opDest.getType().getTypeOfElement();
+        int register = varTable.get(opDest.getName()).getVirtualReg();
+        Descriptor opDescriptor = varTable.get(opDest.getName());
+        ElementType descriptorType = opDescriptor.getVarType().getTypeOfElement();
+
+
+        // TODO: when right hand side expression is a binary operation ( a = x + y, for example)
+
+        if(descriptorType == ARRAYREF && opType != ARRAYREF){
+            ArrayOperand arrayOperand = (ArrayOperand) opDest;
+            Element index = arrayOperand.getIndexOperands().get(0);
+
+            instructionCode.append(loadDescriptor(opDescriptor));
+            instructionCode.append(loadElement(index, varTable));
+        }
+
+        String rhsCode = getInstructionCode(instruction.getRhs(), varTable);
+        instructionCode.append(rhsCode);
+
+        if (opType == INT32 || opType == BOOLEAN){
+            if(descriptorType == ARRAYREF){
+                instructionCode.append("\t").append("iastore\n");
+                return instructionCode.toString();
+            }
+            else{
+                instructionCode.append("\t").append("istore");
+            }
+        }
+        else {
+            instructionCode.append("\t").append("astore");
+        }
+
+        if(register <= 3){
+            instructionCode.append("_");
+        }
+        else{
+            instructionCode.append(" ");
+        }
+
+        instructionCode.append(register).append("\n");
+
+        return instructionCode.toString();
     }
 
     private String getReturnInstructionCode(ReturnInstruction instruction, HashMap<String, Descriptor> varTable){
@@ -544,13 +589,13 @@ public class OllirToJasmin {
 
     private String loadNonLiteral(Element toLoad, HashMap<String, Descriptor> varTable){
         ElementType toLoadElementType = toLoad.getType().getTypeOfElement();
-        // TODO: check this warning: "HashMap<String, Descriptor>' may not contain keys of type 'Operand'"
-        Descriptor toLoadDescriptor = varTable.get((Operand) toLoad);
-        ElementType descriptorType = toLoadDescriptor.getVarType().getTypeOfElement();
+        Descriptor toLoadDescriptor = varTable.get(((Operand) toLoad).getName());
 
+        ElementType descriptorType = toLoadDescriptor.getVarType().getTypeOfElement();
+        /*
         System.out.println("element | descriptor");
         System.out.println(toLoad.toString() + " | " + toLoadDescriptor.toString());
-
+        */
         //?aload ; <a b ...> -> <b[a] ... >
         //? = i | f | d | l | a | b (= byte or boolean)`
         if(toLoadElementType != ARRAYREF && descriptorType == ARRAYREF){
@@ -582,6 +627,8 @@ public class OllirToJasmin {
                 case BOOLEAN:
                     descriptorCode.append("\ta");
                     break;
+                case OBJECTREF:
+                        throw new NotImplementedException("OBJECTREF descriptor loading not implemented");
                 default:
                     throw new RuntimeException("Unknown descriptor type " + descriptorType);
             }
