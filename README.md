@@ -2,12 +2,13 @@
 
 ## GROUP 4C
 
-NAME1: António Ribeiro NR1: up201906761, GRADE1: 18, CONTRIBUTION1: <0 to 100 %>
-NAME2: Mário Travassos, NR2: up201905871, GRADE2: 18, CONTRIBUTION2: <0 to 100 %>
-NAME3: Ricardo Pinto, NR3: up201806849, GRADE2: 18, CONTRIBUTION2: <0 to 100 %>
-NAME4: Tiago Rodrigues, NR4: up201907021, GRADE2: 18, CONTRIBUTION2: <0 to 100 %>
+- António Ribeiro, up201906761, 16, 28% 
+- Mário Travassos, up201905871, 16, 28%
+- Ricardo Pinto, up201806849, 15, 16%
+- Tiago Rodrigues, up201907021, 16, 28% 
 
-GLOBAL Grade of the project: 18
+
+GLOBAL Grade of the project: 16
 
 ## Project description
 
@@ -68,12 +69,12 @@ and assembly type instructions (in this case jasmin), converting the original jm
   a broad range of expressions), MethodBodyOllirGenerator (for method bodies parsing) and OllirGenerator (the parent of
   all, that starts the ollir visit).
 - Pros: Covers a wide range of scenarios, from basic cases to more specific instructions (given the recursive visits).
-- CONS: Since the tree structure, in some cases is too dependent on the operation/instruction itself, it's easy to lose
+- Cons: Since the tree structure, in some cases is too dependent on the operation/instruction itself, it's easy to lose
   context of the expression where the node is embedded in, specially when having to move it to a different visitor
   class. The modular approach also requires some code redundancy.
 
 #### Jasmin
 
-### PROS: (Identify the most positive aspects of your tool)
-
-### CONS: (Identify the most negative aspects of your tool)
+- The jasmin code generation is made through the OllirToJasmin class. It utilizes the ClassUtils object (provided by the OllirResult, from the previous step), that gathers information from each ollir instruction, that are then translated into the Jasmin, according to their context and type. 
+- Pros: Each individual scenario/instruction handling is isolated/delegated into one single method, responsible for the code creation (following the "visit" type approach). 
+- Cons: placing the code generation in one file, instead of a more modular approach may lead to refactoring slow downs, in case the language standard changes.
