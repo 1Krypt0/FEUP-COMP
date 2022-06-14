@@ -208,7 +208,7 @@ public class ProgramSymbolTable implements SymbolTable {
 
     public boolean isImport(String className) {
         // see if the last name after the last dot is the same as the class name
-        return this.imports.stream().anyMatch(f -> f.endsWith(className));
+        return className != null && this.imports.stream().anyMatch(f -> f.endsWith(className));
     }
 
 

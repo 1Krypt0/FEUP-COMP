@@ -136,11 +136,13 @@ public class Cp2Test {
         TestUtils.mustFail(result);
     }
 
+
     @Test
     public void test_1_05_ArrayPlusInt() {
         var result = TestUtils.analyse(SpecsIo.getResource("fixtures/public/cp2/ArrayPlusInt.jmm"));
         TestUtils.mustFail(result);
     }
+
 
     @Test
     public void test_1_06_ArrayAccessOnInt() {
@@ -153,6 +155,7 @@ public class Cp2Test {
         var result = TestUtils.analyse(SpecsIo.getResource("fixtures/public/cp2/ArrayIndexNotInt.jmm"));
         TestUtils.mustFail(result);
     }
+
 
     @Test
     public void test_1_08_AssignIntToBool() {
@@ -184,6 +187,7 @@ public class Cp2Test {
         TestUtils.mustFail(result);
     }
 
+
     @Test
     public void test_1_13_ArrayInWhileCondition() {
         var result = TestUtils.analyse(SpecsIo.getResource("fixtures/public/cp2/ArrayInWhileCondition.jmm"));
@@ -210,6 +214,7 @@ public class Cp2Test {
         TestUtils.noErrors(result);
     }
 
+
     @Test
     public void test_1_17_IncompatibleArguments() {
         var result = TestUtils
@@ -230,7 +235,7 @@ public class Cp2Test {
                 .analyse(SpecsIo.getResource("fixtures/public/cp2/AssumeArguments.jmm"));
         TestUtils.noErrors(result);
     }
-/*
+
     @Test
     public void test_2_01_CompileBasic() {
         testJmmCompilation("fixtures/public/cp2/CompileBasic.jmm", this::ollirTest_2_01_CompileBasic);
@@ -382,6 +387,6 @@ public class Cp2Test {
 
         assertEquals("Assignment does not have the expected type", ElementType.INT32,
                 assignInst.get().getTypeOfAssign().getTypeOfElement());
-    }*/
+    }
 
 }

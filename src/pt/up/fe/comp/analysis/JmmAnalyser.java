@@ -24,7 +24,7 @@ public class JmmAnalyser implements JmmAnalysis {
         MethodAnalyser methodAnalyser = new MethodAnalyser(symbolTable);
         TypeAnalyser typeAnalyser = new TypeAnalyser(symbolTable);
         methodAnalyser.visit(parserResult.getRootNode(), reports);
-        //typeAnalyser.visit(parserResult.getRootNode(), reports);
+        typeAnalyser.visit(parserResult.getRootNode(), reports);
         System.out.println("REPORTS: " + reports);
 
         return new JmmSemanticsResult(parserResult, symbolTable, reports);

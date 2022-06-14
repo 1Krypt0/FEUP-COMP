@@ -12,10 +12,12 @@ import pt.up.fe.comp.jmm.report.Stage;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
 
     private final List<Report> reports;
     private final ProgramSymbolTable symbolTable;
+
 
     public MethodAnalyser(ProgramSymbolTable symbolTable) {
         this.reports = new ArrayList<>();
@@ -130,6 +132,7 @@ public class MethodAnalyser extends PreorderJmmVisitor<List<Report>, String> {
             }
         }
     }
+
 
     private String defaultVisit(JmmNode node, List<Report> reports) {
         for (JmmNode child : node.getChildren()) {
