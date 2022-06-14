@@ -1,5 +1,6 @@
 package pt.up.fe.comp.jasmin;
 
+import com.javacc.parser.tree.Literal;
 import org.specs.comp.ollir.*;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.classmap.FunctionClassMap;
@@ -11,7 +12,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import static org.specs.comp.ollir.ElementType.ARRAYREF;
+import static org.specs.comp.ollir.ElementType.*;
 
 public class OllirToJasmin {
 
@@ -19,6 +20,7 @@ public class OllirToJasmin {
 
     public OllirToJasmin(ClassUnit classUnit){
         this.classUnit = classUnit;
+        //classUnit.show();
     }
 
     // TODO: change access modifiers for this class's functions
@@ -34,8 +36,8 @@ public class OllirToJasmin {
         for (var import2 : classUnit.getImports()){
             classCode.append(".import ");
             classCode.append(import2.toString()).append("\n");
-         }
-         classCode.append("\n");
+        }
+        classCode.append("\n");
 
         // Super Class and Constructor
         // TODO: separate getting super and building the constructor
@@ -134,7 +136,6 @@ public class OllirToJasmin {
     // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
     public String getMethodAccessModifier(Method method){
         AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
-        //System.out.println(method.getMethodName() + "     |      " + methodAccessModifier);
         switch (methodAccessModifier){
             case PUBLIC:
                 return "public";
@@ -168,25 +169,22 @@ public class OllirToJasmin {
         ElementType elementType = type.getTypeOfElement();
         StringBuilder typeDescriptor = new StringBuilder();
 
-        if(elementType == ARRAYREF){
-            // check type of array items
-            ElementType childElemType = ((ArrayType) type).getTypeOfElements();
-            typeDescriptor.append("[").append(getJasminElementType(childElemType));
-            return typeDescriptor.toString();
+        switch (elementType){
+            case ARRAYREF:
+                // check type of array items
+                ElementType childElemType = ((ArrayType) type).getTypeOfElements();
+                typeDescriptor.append("[").append(getJasminElementType(childElemType));
+                return typeDescriptor.toString();
+            case OBJECTREF:
+                throw new NotImplementedException("Element type not implemented: " + elementType);
+            case CLASS:
+                throw new NotImplementedException("Element type not implemented: " + elementType);
+            default:
+                typeDescriptor.append(getJasminElementType(elementType));
+                return typeDescriptor.toString();
+
         }
-        else{
-            typeDescriptor.append(getJasminElementType(elementType));
-            return typeDescriptor.toString();
-        }
-        /*
-        // TODO: Object types
-        //if(elementType == OBJECTREF){
-        //
-        //}
-        // TODO: Class types
-        //if(elementType == CLASS){
-        //
-        //}
+
         /*
             [X......... X[] (array of X)
             LY;........ class Y
@@ -238,15 +236,99 @@ public class OllirToJasmin {
         return headerCode.toString();
     }
 
+    public String getInstructionCode(Instruction instruction){
+        InstructionType instructionType = instruction.getInstType();
+
+        FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
+        instructionMap.put(CallInstruction.class, this::getCallInstructionCode);
+        instructionMap.put(AssignInstruction.class, this::getAssignInstructionCode);
+        instructionMap.put(ReturnInstruction.class, this::getReturnInstructionCode);
+        instructionMap.put(SingleOpInstruction.class, this::getSingleOpInstructionCode);
+        //instructionMap.put(SingleOpCondInstruction.class, this::getCode);
+        instructionMap.put(BinaryOpInstruction.class, this::getBinaryOpInstructionCode);
+        instructionMap.put(PutFieldInstruction.class, this::getPutFieldInstructionCode);
+        instructionMap.put(GetFieldInstruction.class, this::getGetFieldInstructionCode);
+
+        return instructionMap.apply(instruction);
+    }
+
+    public String getCallInstructionCode(CallInstruction instruction){
+        StringBuilder instructionCode = new StringBuilder();
+
+        CallType methodInvocationType = instruction.getInvocationType();
+        switch (methodInvocationType){
+            case invokestatic:
+                return getStaticInvocationCode(instruction);
+            case invokevirtual:
+                throw new NotImplementedException("invokevirtual method invocation");
+            case invokeinterface:
+                throw new NotImplementedException("invokeinterface method invocation");
+            case invokespecial:
+                throw new NotImplementedException("invokespecial method invocation");
+            case NEW:
+                throw new NotImplementedException("NEW method invocation");
+            case arraylength:
+                throw new NotImplementedException("arraylength method invocation");
+            case ldc:
+                throw new NotImplementedException("ldc method invocation");
+            default:
+                throw new NotImplementedException("Uknown method invocation type: " + methodInvocationType);
+        }
+    }
+
+    public String getStaticInvocationCode(CallInstruction instruction){
+        StringBuilder instructionCode = new StringBuilder();
+
+        instructionCode.append("invokestatic ");
+
+        String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
+        String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral();
+        instructionCode.append(getFullyQualifiedName(instructionClassName)).append("/").append(instructionName);
+
+        instructionCode.append("(");
+        for (Element operand : instruction.getListOfOperands()){
+            instructionCode.append(getJasminType(operand.getType()));
+        }
+        instructionCode.append(")");
+
+        instructionCode.append(getJasminType(instruction.getReturnType())).append("\n");
+
+        return instructionCode.toString();
+    }
+
+    public String getAssignInstructionCode(AssignInstruction instruction){
+        throw new NotImplementedException("AssignInstruction");
+    }
+
+    public String getReturnInstructionCode(ReturnInstruction instruction){
+        throw new NotImplementedException("ReturnInstruction");
+    }
+
+    public String getSingleOpInstructionCode(SingleOpInstruction instruction){
+        throw new NotImplementedException("SingleOpInstruction");
+    }
+
+    public String getBinaryOpInstructionCode(BinaryOpInstruction instruction){
+        throw new NotImplementedException("BinaryOpInstruction");
+    }
+
+    public String getPutFieldInstructionCode(PutFieldInstruction instruction){
+        throw new NotImplementedException("PutFieldInstruction");
+    }
+
+    public String getGetFieldInstructionCode(GetFieldInstruction instruction){
+        throw new NotImplementedException("GetFieldInstruction");
+    }
+
     public String getMethodBody(Method method){
         StringBuilder bodyCode = new StringBuilder();
 
-        // TODO: method fields
-        HashMap<String, Descriptor> methodVarTable = method.getVarTable();
+        bodyCode.append(".limit stack 99\n");
+        bodyCode.append(".limit locals 99\n");
 
-        // TODO: remainder of the code
-        StringBuilder instructions = new StringBuilder();
-        HashMap<String, Instruction> labels = method.getLabels();
+        for(Instruction inst : method.getInstructions()){
+            bodyCode.append(getInstructionCode(inst));
+        }
 
         return bodyCode.toString();
     }
@@ -258,60 +340,4 @@ public class OllirToJasmin {
         methodCode.append(".end method\n\n");
         return methodCode.toString();
     }
-
-    // ------------------------------------------   OLD CODE ------------------------
-    /*
-
-    public String getInstructionCode(Instruction method){
-         FunctionClassMap<Instruction, String> instructionMap = new FunctionClassMap<>();
-         //instructionMap.put(CallInstruction.class, this::getCode);
-         instructionMap.apply(method);
-        return instructionMap.apply(method);
-    }
-
-    public String getCallInstructionCode(CallInstruction method){
-        switch(method.getInvocationType()){
-            case invokestatic:
-                return getCodeInvokeStatic(method);
-            // More cases missing?
-            default:
-                throw new NotImplementedException(method.getInvocationType());
-        }
-    }
-
-    // invokestatic
-    private String getCodeInvokeStatic(CallInstruction method){
-        var code = new StringBuilder();
-        //method.show();
-        code.append("invokestatic ");
-
-        var methodClass = ((Operand) method.getFirstArg()).getName();
-
-        code.append(getFullyQualifiedName(methodClass));
-        code.append("/");
-
-        // Warning:
-        // .getLiteral() pelos vistos da return com aspas "" entre o que queremos, ent usei um substring para as
-        // retirar. Not sure se isto acontece sempre, talvez temos de ter outra maneira de solucionar, porque senao
-        // estariamos a remover partes legit do SecondArg do method.
-        var calledMethod = ((LiteralElement) method.getSecondArg()).getLiteral();
-        code.append(calledMethod.substring(1, calledMethod.length() - 1));
-
-        code.append("(");
-        // method.getListOfOperands();
-        for(var operand : method.getListOfOperands()){
-            getArgumentCode(operand);
-        }
-        code.append(")");
-        code.append(getJasminType(method.getReturnType()));
-        code.append("\n");
-
-        return code.toString();
-    }
-
-    private void getArgumentCode(Element operand){
-        throw new NotImplementedException(this);
-    }
-    // ------- END: Individual method type functions (cases from above function) -------
-     */
 }
