@@ -264,7 +264,8 @@ public class OllirToJasmin {
             case invokeinterface:
                 throw new NotImplementedException("invokeinterface method invocation");
             case invokespecial:
-                throw new NotImplementedException("invokespecial method invocation");
+                //throw new NotImplementedException("invokespecial method invocation");
+                return "";
             case NEW:
                 throw new NotImplementedException("NEW method invocation");
             case arraylength:
@@ -282,7 +283,7 @@ public class OllirToJasmin {
         instructionCode.append("invokestatic ");
 
         String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
-        String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral();
+        String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral().replace("\"", "");
         instructionCode.append(getFullyQualifiedName(instructionClassName)).append("/").append(instructionName);
 
         instructionCode.append("(");
