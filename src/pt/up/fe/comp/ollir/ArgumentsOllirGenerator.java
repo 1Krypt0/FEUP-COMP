@@ -35,7 +35,9 @@ public class ArgumentsOllirGenerator extends AJmmVisitor<Integer, String> {
         ExprOllirGenerator exprVisitor =
                 new ExprOllirGenerator(this.symbolTable, this.methodName);
 
-        String instruction = exprVisitor.visit(argNode.getJmmChild(0), 0);
+
+        // TODO: expect argument of type
+        String instruction = exprVisitor.visit(argNode.getJmmChild(0), "i32");
 
         code.append(exprVisitor.getCode());
 

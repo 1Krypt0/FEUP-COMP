@@ -4,5 +4,5 @@ public enum Scope {
     IMPORT,
     LOCAL,
     ARGUMENT,
-    FIELD
+    CLASS, FIELD
 }

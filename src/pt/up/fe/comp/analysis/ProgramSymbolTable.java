@@ -263,6 +263,8 @@ public class ProgramSymbolTable implements SymbolTable {
 
         if (this.isImport(variableName)) return Scope.IMPORT;
 
+        if(this.getClassName().equals(variableName)) return Scope.CLASS;
+
         return null;
     }
 

@@ -2,16 +2,12 @@ package pt.up.fe.comp.ollir;
 
 import AST.AstNode;
 import pt.up.fe.comp.analysis.ProgramSymbolTable;
+import pt.up.fe.comp.analysis.Scope;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 
-/*
-    Some examples:
-    this.testFoo2(1, 1 + c).testFoo3(a);
-    b.length;
-    io.println(c, d); -> Should take care of the return type, void if not assigned (static/imported)
- */
+
 public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
 
     final StringBuilder code;
@@ -31,10 +27,8 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
 
     private String visitMethodCall(JmmNode methodCall, Object hasReturnType) {
         /* Parses arguments and return type*/
-        String methodName = methodCall.get("name");
-        Type returnType = symbolTable.getReturnType(methodName);
-
-        ArgumentsOllirGenerator argumentsOllirGenerator = new ArgumentsOllirGenerator(this.symbolTable, this.methodName);
+        ArgumentsOllirGenerator argumentsOllirGenerator =
+                new ArgumentsOllirGenerator(this.symbolTable, this.methodName);
         String args = argumentsOllirGenerator.visit(methodCall, 1);
 
         code.append(argumentsOllirGenerator.getCode());
@@ -55,102 +49,106 @@ public class DotLinkedOllirGenerator extends AJmmVisitor<Object, String> {
         JmmNode callee = dotLinkedNode.getJmmChild(1);
 
         String caller_var = "";
-        int argumentPosition;
         Type variableType = null;
 
         if (caller.getKind().equals("DotLinked")) {
             variableType = new Type(symbolTable.getClassName(), false);
-            String type = symbolTable.getClassName();
-            caller_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + type;
+            caller_var = symbolTable.tempVar() + "." + symbolTable.getClassName();
             String instruction = visit(caller, null);
-            code.append(caller_var).append(" :=.").append(symbolTable.getClassName()).append(" ").append(instruction);
+            code.append(String.format("%s :=.%s %s;\n", caller_var, symbolTable.getClassName(), instruction));
+
         } else if (caller.getKind().equals("ID")) {
-
             String name = caller.get("name");
+            Scope scope = symbolTable.getVariableScope(name, methodName);
 
-            // search through scopes
-            if (symbolTable.isLocalVariable(name, methodName)) {
+            if (scope.equals(Scope.LOCAL)) {
                 variableType = symbolTable.getLocalVariableType(name, this.methodName);
                 caller_var = name + "." + OllirUtils.getCode(variableType);
-            } else if ((argumentPosition = symbolTable.getArgPosition(name, methodName)) != -1) {
+            } else if (scope.equals(Scope.ARGUMENT)) {
+                int pos = symbolTable.getArgPosition(name, methodName);
                 variableType = symbolTable.getArgumentType(methodName, name);
                 String argumentType = OllirUtils.getCode(variableType);
-                String temp_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + argumentType; // SHOULD THIS BE THE NAME OF THE FIELD?
-
-                code.append(temp_var).append(" :=.").append(argumentType).append(" ").append("$").
-                        append(argumentPosition + 1).append(".").append(name).append(".").
-                        append(argumentType).append(";\n");
-
+                String temp_var = symbolTable.tempVar() + "." + argumentType; // SHOULD THIS BE THE NAME OF THE FIELD?
+                code.append(String.format("%s :=.%s $%d.%s.%s;\n",
+                        temp_var, argumentType, pos + 1, name, argumentType));
                 caller_var = temp_var;
-            } else if (symbolTable.isField(name)) {
+            } else if (scope.equals(Scope.FIELD)) {
                 variableType = symbolTable.getFieldType(name);
                 String fieldTypeCode = OllirUtils.getCode(variableType);
                 caller_var = symbolTable.tempVar() + "." + fieldTypeCode; // SHOULD THIS BE THE NAME OF THE FIELD?
-                String instruction = caller_var + " :=." + fieldTypeCode + " getfield(this," + name + "." + fieldTypeCode + ")" + "." + fieldTypeCode + ";\n";
-                code.append(instruction);
-                // if type import
-                // if type is class type
-                // if array
-            } else if (symbolTable.isImport(name) || symbolTable.getClassName().equals(name)) {
+
+                code.append(String.format("%s :=.%s getfield(this, %s.%s).%s ;\n",
+                        caller_var, fieldTypeCode, name, fieldTypeCode, fieldTypeCode));
+            } else if (symbolTable.isImport(name) || scope.equals(Scope.CLASS)) {
                 caller_var = name;
                 variableType = new Type("Static Import", false);
             }
+
+
         } else if (caller.getKind().equals("ClassCreation")) {
             String className = caller.get("name");
             variableType = new Type(className, false);
-            caller_var = "temp" + "_" + caller.get("col") + "_" + caller.get("line") + "." + className;
-            code.append(caller_var).append(".").append(className).append(" :=.").append(className).append(" new(").append(className).append(").").append(className).append(";\n");
-            code.append("invokespecial(").append(caller_var).append(", \"<init>\").V;\n");
+            caller_var = symbolTable.tempVar() + "." + className;
 
+            code.append(String.format("%s :=.%s new(%s).%s;\n", caller_var, className, className, className));
+            code.append(String.format("invokespecial( %s , \"<init>\").V;\n", caller_var));
         } else if (caller.getKind().equals("This")) {
             // SHOULD THIS BE STORED IN A TEMPORARY VARIABLE?
             caller_var = "this";
             variableType = new Type(symbolTable.getClassName(), false);
         }
 
+        if (callee.getKind().equals("MethodCall")) {
+            return generateCodeForMethodCall(callee, (String) returnType, variableType, caller_var);
+        } else if (callee.getKind().equals("Length")) {
+            return generateCodeForArrayAccess(caller_var, (String) returnType);
+        }
+
+
         // TODO: Implement Negation
 
-        if (callee.getKind().equals("MethodCall")) {
-            String methodName = callee.get("name");
-            ArgumentsOllirGenerator argumentsOllirGenerator = new ArgumentsOllirGenerator(symbolTable, this.methodName);
-            code.append(argumentsOllirGenerator.getCode());
-            String argsString = argumentsOllirGenerator.visit(callee, 1);
-            code.append(argumentsOllirGenerator.getCode());
-
-            String returnTypeCode;
-
-            if (symbolTable.isMethod(methodName)) {
-                returnTypeCode = "." + OllirUtils.getCode(symbolTable.getReturnType(methodName));
-            } else {
-                returnTypeCode = (returnType == null) ? ".V" : ((returnType instanceof String) ? (String) returnType : null);
-            }
-
-            String invoke = (variableType.getName() != null && variableType.getName().contains("Static")) ? "invokestatic" : "invokevirtual";
-            String method_call =  invoke + "(" + caller_var + ",\"" + methodName + "\"" + argsString + ")" + returnTypeCode + ";\n";
-            if(returnType != null) return method_call;
-            String temp_var = symbolTable.tempVar() + "." + OllirUtils.getCode(variableType);
-            code.append(String.format("%s :=%s %s", temp_var, returnTypeCode, method_call));
-            return temp_var;
-        } else if (callee.getKind().equals("Length")) {
-            String arrayLength = "arraylength(" + caller_var + ").i32";
-            if (returnType != null) return arrayLength;
-            String temp_var = symbolTable.tempVar() + ".i32";
-            code.append(String.format("%s :=.i32 %s;\n", temp_var, arrayLength));
-            return temp_var;
-        } else if (callee.getKind().equals("ArrayAccess")) {
-            // TODO: use caller variable and compound []
-        }
-
-
-        /*
-        // DOES THIS EXIST IN OLLIR?
-        else if (callee.getKind().equals("ID")){
-            // ( this.varOfSameClassType ) .foo() or varOfSameClassType.a
-        }
-         */
 
         return "";
     }
+
+    private String generateCodeForArrayAccess(String caller_var, String returnType) {
+        String arrayLength = "arraylength(" + caller_var + ").i32";
+        //if (returnType != null) return arrayLength;
+        String temp_var = symbolTable.tempVar() + ".i32";
+        code.append(String.format("%s :=.i32 %s;\n", temp_var, arrayLength));
+        return temp_var;
+    }
+
+
+    String generateCodeForMethodCall(JmmNode callee, String returnType, Type variableType, String caller_var) {
+        String methodName = callee.get("name");
+        ArgumentsOllirGenerator argumentsOllirGenerator = new ArgumentsOllirGenerator(symbolTable, this.methodName);
+        String argsString = argumentsOllirGenerator.visit(callee, 1);
+        code.append(argumentsOllirGenerator.getCode());
+        String returnTypeCode;
+
+
+        if (symbolTable.isMethod(methodName)) returnTypeCode = "."
+                + OllirUtils.getCode(symbolTable.getReturnType(methodName)); // if it exists, the return type is found
+        else returnTypeCode = returnType == null ? ".V" : "." + returnType; // if it doesn't exist, the return type is forced
+
+
+        String invoke = (variableType.getName() != null
+                && variableType.getName().contains("Static")) ? "invokestatic" : "invokevirtual";
+        String method_call = String.format("%s( %s , \"%s\" %s)%s",
+                invoke, caller_var, methodName, argsString, returnTypeCode);
+
+
+        if (returnType == null) return method_call;
+
+        String temp_var = symbolTable.tempVar() + returnTypeCode;
+        code.append(String.format("%s :=%s %s;\n", temp_var, returnTypeCode, method_call));
+        return temp_var;
+    }
+
+
+
+
 
 
     public String defaultVisit(JmmNode jmmNode, Object o) {

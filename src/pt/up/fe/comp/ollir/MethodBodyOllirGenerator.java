@@ -39,8 +39,17 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         // addVisit(AstNode.Method_Call, this::visitMethodCall);
         addVisit(AstNode.True, this::visitBool);
         addVisit(AstNode.False, this::visitBool);
+        addVisit(AstNode.Negation, this::visitNegation);
 
         setDefaultVisit(this::visitDefault);
+    }
+
+    private String visitNegation(JmmNode jmmNode, Object o) {
+        ExprOllirGenerator exprOllirGenerator = new ExprOllirGenerator(symbolTable, methodName);
+        String expr = exprOllirGenerator.visit(jmmNode.getJmmChild(0), "bool");
+        String temp_var = symbolTable.tempVar() + ".bool";
+        code.append(String.format("%s :=.bool !.bool %s;\n", temp_var, expr));
+        return temp_var;
     }
 
     private String visitMethodBody(JmmNode jmmNode, Object integer) {
@@ -177,7 +186,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
             return String.format("%s%s.%s", variable, arrayAccess, OllirUtils.getCode(type));
         } else if (varScope.equals(Scope.FIELD)) {
             Type type = symbolTable.getVariableType(variable, methodName);
-            String tempVar = symbolTable.tempVar();
+            String tempVar = symbolTable.tempVar() + "." + OllirUtils.getCode(type);
 
             code.append(String.format("%s :=.%s getfield(this, %s.%s).%s;\n",
                     tempVar, OllirUtils.getCode(type), variable, OllirUtils.getCode(type), OllirUtils.getCode(type)));
@@ -190,18 +199,26 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
     private String visitDotLinked(JmmNode jmmNode, Object o) {
         System.out.println("Dot Linked");
 
-        DotLinkedOllirGenerator dotLinkedOllirGenerator = new DotLinkedOllirGenerator(symbolTable, this.methodName);
+        DotLinkedOllirGenerator dotLinkedOllirGenerator =
+                new DotLinkedOllirGenerator(symbolTable, this.methodName);
 
         // Enters the dot linked generation visitor,
         // implying the void return type (since it's not an assign)
-        String instruction = dotLinkedOllirGenerator.visit(jmmNode,
-                jmmNode.getJmmParent().getKind().equals("Assign") ? null : ".V");
-
-        code.append(dotLinkedOllirGenerator.getCode());
-
-        code.append(instruction);
-
-        return instruction;
+        String instruction;
+        if(!jmmNode.getJmmParent().getKind().equals("Assign")){
+            instruction = dotLinkedOllirGenerator.visit(jmmNode, null);
+            code.append(dotLinkedOllirGenerator.getCode());
+            code.append(instruction).append(";\n");
+            return "";
+        }
+        else {
+            String variable = (String) o;
+            // get the substring of the last . in the variable
+            String varType = variable.substring(variable.lastIndexOf(".") + 1);
+            instruction = dotLinkedOllirGenerator.visit(jmmNode, varType);
+            code.append(dotLinkedOllirGenerator.getCode());
+            return instruction;
+        }
     }
 
     private String visitBinOp(JmmNode jmmNode, Object o) {
@@ -229,7 +246,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
         String variable = OllirUtils.getIdCode(variableName, arrayAccess, symbolTable, this.methodName);
 
         // left variables only included in array access ops
-        String right_variable = visit(assignedNode, null);
+        String right_variable = visit(assignedNode, variable);
         assignmentGenerator(variable, assignedNode, right_variable);
 
         if (assignedNode.getKind().equals("ClassCreation"))
@@ -271,7 +288,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
             // if it's a dot linked expression, force the assign to return the type of the left-hand side
             // else simply create the assignment as a normal assignment
             if (assignedNode.getKind().equals("DotLinked"))
-                code.append(String.format("%s :=.%s %s", variableCode,
+                code.append(String.format("%s :=.%s %s;\n", variableCode,
                         OllirUtils.getCode(symbolTable.getVariableType(varName, methodName)), instruction));
             else
                 code.append(String.format("%s %s %s;\n", variableCode,
@@ -281,7 +298,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
             // TODO: if left side is field then store instruction in temp var
             // see if it's necessary new(Class) vs 2 p.e. Literal/Id or complex instruction
             Type varType = symbolTable.getFieldType(varName);
-            String tempVar = symbolTable.tempVar();
+            String tempVar = symbolTable.tempVar() + "." + OllirUtils.getCode(varType);
             code.append(String.format("%s :=.%s %s;\n", tempVar, OllirUtils.getCode(varType), instruction));
             code.append(String.format("putfield(this, %s.%s , %s).V;\n",
                     varName, OllirUtils.getCode(varType), tempVar));
@@ -306,7 +323,7 @@ public class MethodBodyOllirGenerator extends AJmmVisitor<Object, String> {
      *
      * @param instruction the instruction to negate
      * @param node        the node of the if statement
-     * @return
+     * @return the negated instruction
      */
     private String negateCondition(String instruction, JmmNode node) {
         if (isSimpleCondition(instruction)) return instruction.replace("<", ">=");
