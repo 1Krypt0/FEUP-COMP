@@ -303,12 +303,11 @@ public class OllirToJasmin {
                 return getInvokeSpecialCode(instruction, varTable);
             case NEW:
                 return getNewInvocationCode(instruction, varTable);
+            case ldc:
+                return getLDCInvocationCode(instruction, varTable);
             case arraylength:
                 //simply load element into a register + array length
-                throw new NotImplementedException("arraylength method invocation");
-            case ldc:
-                // TODO: simply load element into a register
-                throw new NotImplementedException("ldc method invocation");
+                return getArraylengthInvocationCode(instruction, varTable);
             default:
                 throw new RuntimeException("Unknown method invocation type: " + methodInvocationType);
         }
@@ -430,6 +429,19 @@ public class OllirToJasmin {
             default:
                 throw new RuntimeException("Unknown NEW invocation return type: " + returnType);
         }
+        return instructionCode.toString();
+    }
+
+    private String getLDCInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
+        Element firstInstruction = instruction.getFirstArg();
+        return loadElement(firstInstruction, varTable);
+    }
+
+    private String getArraylengthInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
+        StringBuilder instructionCode = new StringBuilder();
+        Element firstInstruction = instruction.getFirstArg();
+        instructionCode.append(loadElement(firstInstruction, varTable));
+        instructionCode.append("\tarraylength\n");
         return instructionCode.toString();
     }
 
