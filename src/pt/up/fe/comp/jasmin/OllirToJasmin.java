@@ -541,7 +541,7 @@ public class OllirToJasmin {
         }
     }
 
-    private String getGetFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
+    private String getGetFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
         Element firstOperand = instruction.getFirstOperand();
         Element secondOperand = instruction.getSecondOperand();
@@ -558,7 +558,7 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    private String getPutFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
+    private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
         Element firstOperand = instruction.getFirstOperand();
         Element secondOperand = instruction.getSecondOperand();
