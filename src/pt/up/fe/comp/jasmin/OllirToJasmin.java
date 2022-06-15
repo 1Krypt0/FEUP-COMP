@@ -167,7 +167,7 @@ public class OllirToJasmin {
                         return typeDescriptor.toString();
                     }
                 }
-                throw new RuntimeException("AAAAAAAAAAAAAAAAAAAAAAAA");
+                throw new RuntimeException("Error fetching type " + elementType);
             case CLASS:
                 throw new NotImplementedException("Element type not implemented: " + elementType);
             default:
