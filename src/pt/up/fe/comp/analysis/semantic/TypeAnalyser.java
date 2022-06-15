@@ -64,6 +64,10 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
 
     private String visitMethodCall(JmmNode node, List<Report> reports) {
         // check for each arg if type is the same as the type in the list at that point
+        String callerType = visit(node.getJmmParent().getChildren().get(node.getIndexOfSelf() - 1), reports);
+        if (symbolTable.getImports().contains(callerType) || callerType.equals(symbolTable.getSuper())) {
+            return "valid";
+        }
 
         if (symbolTable.hasMethod(node.get("name"))) {
             List<Symbol> argTypes = symbolTable.getArguments(node.get("name")) == null ? Collections.emptyList() :
