@@ -59,8 +59,7 @@ public class OllirToJasmin {
 
         AccessModifiers fieldAccessModifier = field.getFieldAccessModifier();
         if(fieldAccessModifier == AccessModifiers.DEFAULT){
-            //throw new RuntimeException("Invalid field access modifier found: " + fieldAccessModifier);
-            fieldCode.append(" DEFAULT");
+            fieldCode.append(" private");
         }
         else{
             String accessModifierString = fieldAccessModifier.toString();
@@ -106,7 +105,7 @@ public class OllirToJasmin {
                 return importString.replace('.', '/');
             }
         }
-        throw new RuntimeException("Could not find import for class " + className);
+        return className;
     }
 
     private String getSuperClassName(){
@@ -129,7 +128,7 @@ public class OllirToJasmin {
             case PROTECTED:
                 return "protected";
             case DEFAULT:
-                return "private";
+                return "public";
         }
         throw new RuntimeException("Could not get access modifier for method " + method.getMethodName());
     }
@@ -332,9 +331,9 @@ public class OllirToJasmin {
 
         instructionCode.append("\tinvokestatic ");
 
-        String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
+        String instructionCallerName = ((Operand) instruction.getFirstArg()).getName();
         String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral().replace("\"", "");
-        instructionCode.append(getFullyQualifiedName(instructionClassName)).append("/").append(instructionName);
+        instructionCode.append(getFullyQualifiedName(instructionCallerName)).append("/").append(instructionName);
 
         instructionCode.append("(");
         for (Element operand : instruction.getListOfOperands()){
@@ -358,9 +357,9 @@ public class OllirToJasmin {
 
         instructionCode.append("\tinvokevirtual ");
 
-        String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
+        String instructionClassName = ((ClassType) instruction.getFirstArg().getType()).getName();
         String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral().replace("\"", "");
-        instructionCode.append(instructionName).append("/").append(instructionName);
+        instructionCode.append(getFullyQualifiedName(instructionClassName)).append("/").append(instructionName);
 
         instructionCode.append("(");
         for (Element operand : instruction.getListOfOperands()){
@@ -369,6 +368,7 @@ public class OllirToJasmin {
         instructionCode.append(")");
 
         instructionCode.append(getJasminType(instruction.getReturnType())).append("\n");
+
 
         return instructionCode.toString();
     }
