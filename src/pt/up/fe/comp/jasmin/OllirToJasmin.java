@@ -541,7 +541,7 @@ public class OllirToJasmin {
         }
     }
 
-    private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
+    private String getGetFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
         Element firstOperand = instruction.getFirstOperand();
         Element secondOperand = instruction.getSecondOperand();
@@ -558,8 +558,21 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    private String getGetFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
-        throw new NotImplementedException("GetFieldInstruction");
+    private String getPutFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
+        StringBuilder instructionCode = new StringBuilder();
+        Element firstOperand = instruction.getFirstOperand();
+        Element secondOperand = instruction.getSecondOperand();
+
+        String className = ((Operand) firstOperand).getName();
+        String fieldName = ((Operand) secondOperand).getName();
+        String fieldType = getJasminType(secondOperand.getType());
+
+        loadElement(firstOperand, varTable);
+        instructionCode.append("putfield ");
+        instructionCode.append(className).append("/").append(fieldName);
+        instructionCode.append(" ").append(fieldType).append("\n");
+
+        return instructionCode.toString();
     }
 
     private String loadElement(Element toLoad, HashMap<String, Descriptor> varTable){
