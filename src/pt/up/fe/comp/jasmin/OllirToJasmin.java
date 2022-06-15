@@ -272,7 +272,7 @@ public class OllirToJasmin {
                 return getAssignInstructionCode( (AssignInstruction) instruction, varTable);
             case RETURN:
                 return getReturnInstructionCode( (ReturnInstruction) instruction, varTable);
-            case UNARYOPER:
+            case NOPER:
                 return getSingleOpInstructionCode( (SingleOpInstruction) instruction, varTable);
                 /*
             case SingleOpCondInstruction.class:
@@ -288,8 +288,8 @@ public class OllirToJasmin {
             case GOTO:
                 return
                 */
-            case NOPER:
-                throw new NotImplementedException("NOPER instruction type not implemented");
+            case UNARYOPER:
+                throw new NotImplementedException("UNARYOPER instruction type not implemented");
             default:
                 throw new RuntimeException("Unknown instruction type " + instructionType);
         }
@@ -523,8 +523,8 @@ public class OllirToJasmin {
     }
 
     private String getSingleOpInstructionCode(SingleOpInstruction instruction, HashMap<String, Descriptor> varTable){
-        //  TODO: write this
-        throw new NotImplementedException("SingleOpInstruction");
+        return loadElement(instruction.getSingleOperand(), varTable);
+        //throw new NotImplementedException("SingleOpInstruction");
     }
 
     private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
