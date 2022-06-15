@@ -26,7 +26,6 @@ public class OllirToJasmin {
         this.classname = "";
     }
 
-    // TODO: change access modifiers for this class's functions
     public String getClassCode(){
 
         var classCode = new StringBuilder();
@@ -45,9 +44,13 @@ public class OllirToJasmin {
         classCode.append("\n");
 
         // Class Methods
+        System.out.println("\nInstruction type");
         for (var method : classUnit.getMethods()){
+            System.out.println("---NEWMETHOD----");
             classCode.append(getMethodCode(method));
+            System.out.println("-----------------");
         }
+        System.out.println("-------------------------------\n");
 
         return classCode.toString();
     }
@@ -79,7 +82,7 @@ public class OllirToJasmin {
 
         fieldCode.append(" ").append(field.getFieldName());
         String fieldType = getJasminType(field.getFieldType());
-        fieldCode.append(" ").append(fieldType).append(";");
+        fieldCode.append(" ").append(fieldType);
 
         if(field.isInitialized()){
             fieldCode.append(" = ").append(field.getInitialValue());
@@ -121,7 +124,6 @@ public class OllirToJasmin {
     }
 
     private String getMethodAccessModifier(Method method){
-        // TODO: clean up this code (*wink wink* methodAccessModifier.toLowerCase() *wink wink*)
         AccessModifiers methodAccessModifier = method.getMethodAccessModifier();
         switch (methodAccessModifier){
             case PUBLIC:
@@ -241,9 +243,10 @@ public class OllirToJasmin {
     private String getMethodBody(Method method){
         StringBuilder bodyCode = new StringBuilder();
 
+        /*
         bodyCode.append("\t.limit stack 99\n");
         bodyCode.append("\t.limit locals 99\n");
-
+        */
         HashMap<String, Descriptor> varTable = method.getVarTable();
 
         for(Instruction inst : method.getInstructions()){
@@ -268,6 +271,7 @@ public class OllirToJasmin {
         return instructionMap.apply(instruction);
         */
         InstructionType instructionType = instruction.getInstType();
+        System.out.println(instructionType);
         switch (instructionType){
             case CALL:
                 return getCallInstructionCode( (CallInstruction) instruction, varTable);
@@ -301,6 +305,7 @@ public class OllirToJasmin {
     private String getCallInstructionCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
 
         CallType methodInvocationType = instruction.getInvocationType();
+        System.out.println(methodInvocationType);
         switch (methodInvocationType){
             case invokestatic:
                 return getStaticInvocationCode(instruction, varTable);
@@ -471,6 +476,7 @@ public class OllirToJasmin {
         String rhsCode = getInstructionCode(instruction.getRhs(), varTable);
         instructionCode.append(rhsCode);
 
+        System.out.println("Add store");
         if (opType == INT32 || opType == BOOLEAN){
             if(descriptorType == ARRAYREF){
                 instructionCode.append("\t").append("iastore\n");
@@ -646,6 +652,7 @@ public class OllirToJasmin {
             ArrayOperand arrayOperand = (ArrayOperand) toLoad;
             Element index = arrayOperand.getIndexOperands().get(0);
             nonLiteralCode.append(loadDescriptor(toLoadDescriptor)).append(loadElement(index, varTable));
+            System.out.println("non literal load aload");
             nonLiteralCode.append("\tiaload\n");
             return nonLiteralCode.toString();
         }
@@ -655,6 +662,7 @@ public class OllirToJasmin {
     private String loadDescriptor(Descriptor toLoad){
         ElementType descriptorType = toLoad.getVarType().getTypeOfElement();
         //aload_0
+        System.out.println("Descriptor load");
         if (descriptorType == THIS){
             return "aload_0\n";
         }
