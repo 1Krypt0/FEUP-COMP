@@ -521,23 +521,69 @@ public class OllirToJasmin {
     }
 
     private String getSingleOpInstructionCode(SingleOpInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: CONFIRM
         return loadElement(instruction.getSingleOperand(), varTable);
         //throw new NotImplementedException("SingleOpInstruction");
     }
 
     private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
         //  TODO: write this
+
+
+
         throw new NotImplementedException("BinaryOpInstruction");
     }
 
     private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
         //  TODO: write this
-        throw new NotImplementedException("PutFieldInstruction");
+        StringBuilder instructionCode = new StringBuilder();
+        
+        Element firstOperand = instruction.getFirstOperand();
+        Element secondOperand = instruction.getSecondOperand();
+
+        instructionCode.append(loadElement(firstOperand , varTable));
+        instructionCode.append("\tputfield ");
+
+        // (Maybe) Missing check to see if it's itself, aka || if ( operand.getName().equals("this") ) return className;
+        instructionCode.append(((Operand) firstOperand).getName());
+        instructionCode.append("/");
+        instructionCode.append(((Operand) secondOperand).getName());
+        instructionCode.append(" ");
+
+        // Missing XXXXXXXXX
+        //instructionCode.append(getJasminType(XXXXXXXXX.getFieldType(instruction)));
+        instructionCode.append("\n");
+
+        // (Maybe) Missing stack modifications (Maybe)
+
+        return instructionCode.toString();
+        //throw new NotImplementedException("PutFieldInstruction");
     }
 
     private String getGetFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
-        //  TODO: write this
-        throw new NotImplementedException("GetFieldInstruction");
+        //  TODO: CONFIRM
+        StringBuilder instructionCode = new StringBuilder();
+
+        Element firstOperand = instruction.getFirstOperand();
+        Element secondOperand = instruction.getSecondOperand();
+
+        instructionCode.append(loadElement(firstOperand , varTable));
+        instructionCode.append("\tgetfield ");
+
+        // Might need check to see if it's itself, aka || if ( operand.getName().equals("this") ) return className;
+        instructionCode.append(((Operand) firstOperand).getName());
+        instructionCode.append("/");
+        instructionCode.append(((Operand) secondOperand).getName());
+        instructionCode.append(" ");
+
+        // Missing XXXXXXXXX
+        //instructionCode.append(getJasminType(XXXXXXXXX.getFieldType(instruction)));
+        instructionCode.append("\n");
+
+        // Maybe missing stack modifications
+
+        return instructionCode.toString();
+        //throw new NotImplementedException("GetFieldInstruction");
     }
 
     private String loadElement(Element toLoad, HashMap<String, Descriptor> varTable){
