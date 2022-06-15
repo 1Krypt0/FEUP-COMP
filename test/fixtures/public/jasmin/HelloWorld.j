@@ -1,6 +1,8 @@
     .class public HelloWorld
     .super java/lang/Object
 
+    .method public/private/protected static final nome/<init>(<param>)<return type>
+
     ;
     ; standard initializer (calls java.lang.Object's initializer)
     ;

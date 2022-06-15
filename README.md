@@ -76,5 +76,5 @@ and assembly type instructions (in this case jasmin), converting the original jm
 #### Jasmin
 
 - The jasmin code generation is made through the OllirToJasmin class. It utilizes the ClassUtils object (provided by the OllirResult, from the previous step), that gathers information from each ollir instruction, that are then translated into the Jasmin, according to their context and type. 
-- Pros: Each individual scenario/instruction handling is isolated/delegated into one single method, responsible for the code creation (following the "visit" type approach). 
-- Cons: placing the code generation in one file, instead of a more modular approach may lead to refactoring slow downs, in case the language standard changes.
+- Pros: Each individual scenario/instruction handling is isolated/delegated into one single method, responsible for the code creation (following the "visit" type approach). Each of these code generation methods are designed to be modular, in the sense that they are as independent as possible from eachother, and can thereby be chained and used as building blocks in order to compile more complex instructions.
+- Cons: placing the code generation in one file, instead of a more modular and package-oriented approach may lead to refactoring slow downs, in the eventuality of the the language standard changing.
