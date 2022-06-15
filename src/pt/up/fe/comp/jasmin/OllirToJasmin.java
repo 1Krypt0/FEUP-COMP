@@ -296,8 +296,6 @@ public class OllirToJasmin {
                 return getStaticInvocationCode(instruction, varTable);
             case invokevirtual:
                 return getVirtualInvocationCode(instruction, varTable);
-            case invokeinterface:
-                throw new NotImplementedException("invokeinterface method invocation");
             case invokespecial:
                 return getInvokeSpecialCode(instruction, varTable);
             case NEW:
