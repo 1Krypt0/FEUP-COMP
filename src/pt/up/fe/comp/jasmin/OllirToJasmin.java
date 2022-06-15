@@ -35,15 +35,7 @@ public class OllirToJasmin {
 
         // Class Name
         this.classname = classUnit.getClassName();
-        classCode.append(".class public ").append(this.classname).append("\n\n");
-
-        /*
-        for (var import2 : classUnit.getImports()){
-            classCode.append(".import ");
-            classCode.append(import2.toString()).append("\n");
-        }
-        classCode.append("\n");
-        */
+        classCode.append(".class public ").append(this.classname).append("\n");
 
         // Super Class and Constructor
         classCode.append(".super ").append(getSuperClassName()).append("\n\n");
