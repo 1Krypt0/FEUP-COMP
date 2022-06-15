@@ -542,7 +542,20 @@ public class OllirToJasmin {
     }
 
     private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
-        throw new NotImplementedException("PutFieldInstruction");
+        StringBuilder instructionCode = new StringBuilder();
+        Element firstOperand = instruction.getFirstOperand();
+        Element secondOperand = instruction.getSecondOperand();
+
+        String className = ((Operand) firstOperand).getName();
+        String fieldName = ((Operand) secondOperand).getName();
+        String fieldType = getJasminType(secondOperand.getType());
+
+        loadElement(firstOperand, varTable);
+        instructionCode.append("getfield ");
+        instructionCode.append(className).append("/").append(fieldName);
+        instructionCode.append(" ").append(fieldType).append("\n");
+
+        return instructionCode.toString();
     }
 
     private String getGetFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
