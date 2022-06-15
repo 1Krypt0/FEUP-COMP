@@ -243,14 +243,17 @@ public class OllirToJasmin {
     private String getMethodBody(Method method){
         StringBuilder bodyCode = new StringBuilder();
 
-        /*
         bodyCode.append("\t.limit stack 99\n");
         bodyCode.append("\t.limit locals 99\n");
-        */
+
         HashMap<String, Descriptor> varTable = method.getVarTable();
 
         for(Instruction inst : method.getInstructions()){
             bodyCode.append("\t").append(getInstructionCode(inst, varTable));
+        }
+
+        if (method.isConstructMethod()){
+                bodyCode.append("\treturn\n");
         }
 
         return bodyCode.toString();
@@ -515,7 +518,7 @@ public class OllirToJasmin {
                 instructionCode.append("\ti");
                 break;
             case BOOLEAN:
-                instructionCode.append("\ta");
+                instructionCode.append("\ti");
                 break;
             default:
                 throw new NotImplementedException("Unknown NEW invocation return type: " + returnType);
