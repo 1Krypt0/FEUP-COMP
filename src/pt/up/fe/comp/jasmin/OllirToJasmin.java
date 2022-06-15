@@ -12,9 +12,12 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+
 import static org.specs.comp.ollir.ElementType.*;
 
 public class OllirToJasmin {
+
+    int cond;
 
     private final ClassUnit classUnit;
     private ArrayList<String> imports;
@@ -460,8 +463,38 @@ public class OllirToJasmin {
         ElementType descriptorType = opDescriptor.getVarType().getTypeOfElement();
 
 
+
         // TODO: when right hand side expression is a binary operation ( a = x + y, for example)
 
+
+        // Case Inc (Incrementation a += 1) (NOT WORKING | NEEDS FIX)
+        /*
+        if (instruction.getRhs().getInstType() == BINARYOPER){
+            BinaryOpInstruction binOpInst = (BinaryOpInstruction) instruction.getRhs();
+            if (binOpInst.getUnaryOperation().getOpType() == ADD){ // TODO: CONFIRM: Would just 'ADD' work???
+
+                if (binOpInst.getRightOperand().isLiteral() && !binOpInst.getLeftOperand().isLiteral()){
+                    Integer roIntValue = parseInt(((LiteralElement) binOpInst.getRightOperand()).getLiteral());
+                    if (roIntValue == 1 && ((Operand) binOpInst.getLeftOperand()).getName().equals(opDest.getName()))
+                        return "\tiinc " + register + " 1\n";
+                }
+
+                else 
+                
+                if (binOpInst.getRightOperand().isLiteral() && !binOpInst.getLeftOperand().isLiteral()){
+                    Integer loIntValue = parseInt(((LiteralElement) binOpInst.getRightOperand()).getLiteral());
+                    if (loIntValue == 1 && ((Operand) binOpInst.getRightOperand()).getName().equals(o.getName()))
+                        return "\tiinc " + register + " 1\n";
+                }
+            }
+
+        }
+        */
+
+
+
+
+        // Case 1
         if(descriptorType == ARRAYREF && opType != ARRAYREF){
             ArrayOperand arrayOperand = (ArrayOperand) opDest;
             Element index = arrayOperand.getIndexOperands().get(0);
@@ -473,6 +506,10 @@ public class OllirToJasmin {
         String rhsCode = getInstructionCode(instruction.getRhs(), varTable);
         instructionCode.append(rhsCode);
 
+
+
+
+        // Case 2
         if (opType == INT32 || opType == BOOLEAN){
             if(descriptorType == ARRAYREF){
                 instructionCode.append("\t").append("iastore\n");
@@ -527,13 +564,204 @@ public class OllirToJasmin {
         //throw new NotImplementedException("SingleOpInstruction");
     }
 
-    private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
-        //  TODO: write this
 
 
 
-        throw new NotImplementedException("BinaryOpInstruction");
+
+
+    // BINOP Dependency (OLD) !
+    /*
+    public String getUnaryOpInstruction(UnaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
+        StringBuilder instructionCode = new StringBuilder();
+        //instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+        instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+        instructionCode.append("\t");
+        instructionCode.append(instruction.getUnaryOperation()); // Maybe missing getOp()
+        instructionCode.append("\n");
+
+        return instructionCode.toString();
     }
+    // BINOP critical (OLD) !!
+    private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: CONFIRM this
+        StringBuilder instructionCode = new StringBuilder();
+        OperationType binOpInst = instruction.getUnaryOperation().getOpType();
+
+        if (binOpInst == OperationType.NOTB){
+                // Maybe Missing: Reset Stack size
+                cond = cond + 1;
+
+                String leftOpName = ((Operand) instruction.getLeftOperand()).getName();
+                String rightOpName = ((Operand) instruction.getRightOperand()).getName();
+
+                instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+                if (leftOpName.equals(rightOpName))
+                    instructionCode.append("\tifeq");
+                else{
+                    instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+                    instructionCode.append("\t");
+                    instructionCode.append(getComparison(instruction.getUnaryOperation()));
+                }
+
+                instructionCode.append(" True" + cond + "\n");
+                instructionCode.append("\ticonst_0" + "\n");
+                instructionCode.append("\tgoto Store" + cond + "\n");
+                instructionCode.append("True" + cond + ":\n");
+                instructionCode.append("\ticonst_t" + "\n");
+                instructionCode.append("Store" + cond + ":\n");
+
+
+
+                return instructionCode.toString();
+            }
+
+
+            
+        else if(binOpInst == OperationType.ANDB){
+                cond = cond + 1;
+                // Maybe Missing: Reset Stack size
+
+                instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+                instructionCode.append("\tifeq False" + cond + "\n");
+                instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+                instructionCode.append("\tifeq False" + cond + "\n");
+                instructionCode.append("\ticonst_1" + "\n");
+                instructionCode.append("\tgoto Store" + cond + "\n");
+                instructionCode.append("False" + cond + ":\n");
+                instructionCode.append("\ticonst_0" + "\n");
+                instructionCode.append("Store" + cond + ":\n");
+
+                return instructionCode.toString();
+            }
+
+        else if(binOpInst == OperationType.LTH){
+            cond = cond + 1;
+            // Maybe Missing: Reset Stack size
+            instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+            instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+            instructionCode.append("\t" + getComparison(instruction.getUnaryOperation()) + " True" + cond + "\n");
+            instructionCode.append("\ticonst_0" + "\n");
+            instructionCode.append("\tgoto Store" + cond + "\n");
+            instructionCode.append("True" + cond + ":\n");
+            instructionCode.append("\ticonst_1" + "\n");
+            instructionCode.append("Store" + cond + ":\n");
+
+            return instructionCode.toString();
+
+        }
+
+        else{ 
+            instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+            instructionCode.append(UnaryOpInstruction(instruction, varTable));
+            
+            return instructionCode.toString();
+        }
+        
+        //throw new NotImplementedException("BinaryOpInstruction");
+    }
+    */
+
+    // BINOP Dependency (NEW) !
+    public String getBinaryOpInstruction(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
+        StringBuilder instructionCode = new StringBuilder();
+        //instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+        instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+        instructionCode.append("\t");
+        instructionCode.append(instruction.getOperation()); // Maybe missing getOp()
+        instructionCode.append("\n");
+
+        return instructionCode.toString();
+    }
+
+ // BINOP critical (NEW) !!
+    private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
+        //  TODO: CONFIRM this
+        StringBuilder instructionCode = new StringBuilder();
+        OperationType binOpInst = instruction.getOperation().getOpType();
+
+        if (binOpInst == OperationType.NOTB){
+                // Maybe Missing: Reset Stack size
+                cond = cond + 1;
+
+                String leftOpName = ((Operand) instruction.getLeftOperand()).getName();
+                String rightOpName = ((Operand) instruction.getRightOperand()).getName();
+
+                instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+                if (leftOpName.equals(rightOpName))
+                    instructionCode.append("\tifeq");
+                else{
+                    instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+                    instructionCode.append("\t");
+                    instructionCode.append(getComparison(instruction.getOperation()));
+                }
+
+                instructionCode.append(" True" + cond + "\n");
+                instructionCode.append("\ticonst_0" + "\n");
+                instructionCode.append("\tgoto Store" + cond + "\n");
+                instructionCode.append("True" + cond + ":\n");
+                instructionCode.append("\ticonst_t" + "\n");
+                instructionCode.append("Store" + cond + ":\n");
+
+
+
+                return instructionCode.toString();
+            }
+
+
+            
+        else if(binOpInst == OperationType.ANDB){
+                cond = cond + 1;
+                // Maybe Missing: Reset Stack size
+
+                instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+                instructionCode.append("\tifeq False" + cond + "\n");
+                instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+                instructionCode.append("\tifeq False" + cond + "\n");
+                instructionCode.append("\ticonst_1" + "\n");
+                instructionCode.append("\tgoto Store" + cond + "\n");
+                instructionCode.append("False" + cond + ":\n");
+                instructionCode.append("\ticonst_0" + "\n");
+                instructionCode.append("Store" + cond + ":\n");
+
+                return instructionCode.toString();
+            }
+
+        else if(binOpInst == OperationType.LTH){
+            cond = cond + 1;
+            // Maybe Missing: Reset Stack size
+            instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+            instructionCode.append(loadElement(instruction.getRightOperand(), varTable));
+            instructionCode.append("\t" + getComparison(instruction.getOperation()) + " True" + cond + "\n");
+            instructionCode.append("\ticonst_0" + "\n");
+            instructionCode.append("\tgoto Store" + cond + "\n");
+            instructionCode.append("True" + cond + ":\n");
+            instructionCode.append("\ticonst_1" + "\n");
+            instructionCode.append("Store" + cond + ":\n");
+
+            return instructionCode.toString();
+
+        }
+
+        else{ 
+            instructionCode.append(loadElement(instruction.getLeftOperand(), varTable));
+            // ToDo: Individually set Operation and Operand....?
+            //instructionCode.append(UnaryOpInstruction(instruction, varTable));
+            
+            return instructionCode.toString();
+        }
+        
+        //throw new NotImplementedException("BinaryOpInstruction");
+    }
+
+
+
+
+
+
+
+
+
+
 
     private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
         //  TODO: write this
@@ -552,7 +780,9 @@ public class OllirToJasmin {
         instructionCode.append(" ");
 
         // Missing XXXXXXXXX
-        //instructionCode.append(getJasminType(XXXXXXXXX.getFieldType(instruction)));
+        //instructionCode.append(getJasminType(Field.getFieldType(instruction)));
+        // Probably needs a getJasminType() somewhere
+        instructionCode.append(instruction.getFieldType());
         instructionCode.append("\n");
 
         // (Maybe) Missing stack modifications (Maybe)
@@ -578,7 +808,8 @@ public class OllirToJasmin {
         instructionCode.append(" ");
 
         // Missing XXXXXXXXX
-        //instructionCode.append(getJasminType(XXXXXXXXX.getFieldType(instruction)));
+        // Probably needs a getJasminType() somewhere
+        instructionCode.append(instruction.getFieldType());
         instructionCode.append("\n");
 
         // Maybe missing stack modifications
@@ -687,6 +918,23 @@ public class OllirToJasmin {
             descriptorCode.append(descriptorRegister).append("\n");
 
             return descriptorCode.toString();
+        }
+    }
+
+        private String getComparison(Operation operation) {
+        switch (operation.getOpType()) {
+            case GTE:
+                return "if_icmpge";
+            case LTH:
+                return "if_icmplt";
+            case EQ:
+                return "if_icmpeq";
+            case NOTB:
+            case NEQ:
+                return "if_icmpne";
+            default:
+                System.out.println(operation.getOpType());
+                return "ERROR comparison not implemented yet";
         }
     }
 }
