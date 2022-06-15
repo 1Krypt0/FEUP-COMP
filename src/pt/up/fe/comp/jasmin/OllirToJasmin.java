@@ -167,7 +167,7 @@ public class OllirToJasmin {
                         return typeDescriptor.toString();
                     }
                 }
-                throw new RuntimeException("AAAAAAAAAAAAAAAAAAAAAAAA");
+                throw new RuntimeException("Error fetching type " + elementType);
             case CLASS:
                 throw new NotImplementedException("Element type not implemented: " + elementType);
             default:
@@ -261,7 +261,6 @@ public class OllirToJasmin {
         instructionMap.put(AssignInstruction.class, this::getAssignInstructionCode);
         instructionMap.put(ReturnInstruction.class, this::getReturnInstructionCode);
         instructionMap.put(SingleOpInstruction.class, this::getSingleOpInstructionCode);
-        //instructionMap.put(SingleOpCondInstruction.class, this::getCode);
         instructionMap.put(BinaryOpInstruction.class, this::getBinaryOpInstructionCode);
         instructionMap.put(PutFieldInstruction.class, this::getPutFieldInstructionCode);
         instructionMap.put(GetFieldInstruction.class, this::getGetFieldInstructionCode);
@@ -278,22 +277,12 @@ public class OllirToJasmin {
                 return getReturnInstructionCode( (ReturnInstruction) instruction, varTable);
             case NOPER:
                 return getSingleOpInstructionCode( (SingleOpInstruction) instruction, varTable);
-                /*
-            case SingleOpCondInstruction.class:
-                return;
-                */
             case BINARYOPER:
                 return getBinaryOpInstructionCode( (BinaryOpInstruction) instruction, varTable);
             case PUTFIELD:
                 return getPutFieldInstructionCode( (PutFieldInstruction) instruction, varTable);
             case GETFIELD:
                 return getGetFieldInstructionCode( (GetFieldInstruction) instruction, varTable);
-                /*
-            case GOTO:
-                return
-                */
-            case UNARYOPER:
-                throw new NotImplementedException("UNARYOPER instruction type not implemented");
             default:
                 throw new RuntimeException("Unknown instruction type " + instructionType);
         }
@@ -307,17 +296,12 @@ public class OllirToJasmin {
                 return getStaticInvocationCode(instruction, varTable);
             case invokevirtual:
                 return getVirtualInvocationCode(instruction, varTable);
-            case invokeinterface:
-                throw new NotImplementedException("invokeinterface method invocation");
             case invokespecial:
                 return getInvokeSpecialCode(instruction, varTable);
             case NEW:
                 return getNewInvocationCode(instruction, varTable);
-            case ldc:
-                return getLDCInvocationCode(instruction, varTable);
             case arraylength:
-                //simply load element into a register + array length
-                return getArraylengthInvocationCode(instruction, varTable);
+                return getArrayLengthInvocationCode(instruction, varTable);
             default:
                 throw new RuntimeException("Unknown method invocation type: " + methodInvocationType);
         }
@@ -422,7 +406,7 @@ public class OllirToJasmin {
                         arrayTypeString = "java/lang/String";
                         break;
                     default:
-                        throw new RuntimeException("Uknown array type for new instruction " + arrayType);
+                        throw new RuntimeException("Unknown array type for new instruction " + arrayType);
                 }
                 instructionCode.append("newarray ").append(arrayTypeString).append("\n");
                 break;
@@ -437,12 +421,7 @@ public class OllirToJasmin {
         return instructionCode.toString();
     }
 
-    private String getLDCInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
-        Element firstInstruction = instruction.getFirstArg();
-        return loadElement(firstInstruction, varTable);
-    }
-
-    private String getArraylengthInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
+    private String getArrayLengthInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
         StringBuilder instructionCode = new StringBuilder();
         Element firstInstruction = instruction.getFirstArg();
         instructionCode.append(loadElement(firstInstruction, varTable));
@@ -458,9 +437,6 @@ public class OllirToJasmin {
         int register = opDescriptor.getVirtualReg();
         ElementType opType = opDest.getType().getTypeOfElement();
         ElementType descriptorType = opDescriptor.getVarType().getTypeOfElement();
-
-
-        // TODO: when right hand side expression is a binary operation ( a = x + y, for example)
 
         if(descriptorType == ARRAYREF && opType != ARRAYREF){
             ArrayOperand arrayOperand = (ArrayOperand) opDest;
@@ -528,63 +504,15 @@ public class OllirToJasmin {
     }
 
     private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
-        //  TODO: write this
-
-
-
         throw new NotImplementedException("BinaryOpInstruction");
     }
 
     private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
-        //  TODO: write this
-        StringBuilder instructionCode = new StringBuilder();
-        
-        Element firstOperand = instruction.getFirstOperand();
-        Element secondOperand = instruction.getSecondOperand();
-
-        instructionCode.append(loadElement(firstOperand , varTable));
-        instructionCode.append("\tputfield ");
-
-        // (Maybe) Missing check to see if it's itself, aka || if ( operand.getName().equals("this") ) return className;
-        instructionCode.append(((Operand) firstOperand).getName());
-        instructionCode.append("/");
-        instructionCode.append(((Operand) secondOperand).getName());
-        instructionCode.append(" ");
-
-        // Missing XXXXXXXXX
-        //instructionCode.append(getJasminType(XXXXXXXXX.getFieldType(instruction)));
-        instructionCode.append("\n");
-
-        // (Maybe) Missing stack modifications (Maybe)
-
-        return instructionCode.toString();
-        //throw new NotImplementedException("PutFieldInstruction");
+        throw new NotImplementedException("PutFieldInstruction");
     }
 
     private String getGetFieldInstructionCode(GetFieldInstruction instruction, HashMap<String, Descriptor> varTable){
-        //  TODO: CONFIRM
-        StringBuilder instructionCode = new StringBuilder();
-
-        Element firstOperand = instruction.getFirstOperand();
-        Element secondOperand = instruction.getSecondOperand();
-
-        instructionCode.append(loadElement(firstOperand , varTable));
-        instructionCode.append("\tgetfield ");
-
-        // Might need check to see if it's itself, aka || if ( operand.getName().equals("this") ) return className;
-        instructionCode.append(((Operand) firstOperand).getName());
-        instructionCode.append("/");
-        instructionCode.append(((Operand) secondOperand).getName());
-        instructionCode.append(" ");
-
-        // Missing XXXXXXXXX
-        //instructionCode.append(getJasminType(XXXXXXXXX.getFieldType(instruction)));
-        instructionCode.append("\n");
-
-        // Maybe missing stack modifications
-
-        return instructionCode.toString();
-        //throw new NotImplementedException("GetFieldInstruction");
+        throw new NotImplementedException("GetFieldInstruction");
     }
 
     private String loadElement(Element toLoad, HashMap<String, Descriptor> varTable){
