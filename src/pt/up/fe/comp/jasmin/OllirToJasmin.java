@@ -24,7 +24,6 @@ public class OllirToJasmin {
         this.classUnit = classUnit;
         this.imports = classUnit.getImports();
         this.classname = "";
-        //classUnit.show();
     }
 
     // TODO: change access modifiers for this class's functions
@@ -508,10 +507,10 @@ public class OllirToJasmin {
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
         switch (returnType){
             case INT32:
-                instructionCode.append("i");
+                instructionCode.append("\ti");
                 break;
             case BOOLEAN:
-                instructionCode.append("a");
+                instructionCode.append("\ta");
                 break;
             default:
                 throw new NotImplementedException("Unknown NEW invocation return type: " + returnType);
