@@ -19,6 +19,7 @@ public class OllirToJasmin {
     private final ClassUnit classUnit;
     private ArrayList<String> imports;
     private String classname;
+    private int conditionals;
 
     public OllirToJasmin(ClassUnit classUnit){
         this.classUnit = classUnit;
@@ -196,6 +197,7 @@ public class OllirToJasmin {
     }
 
     private String getMethodCode(Method method) {
+        conditionals = 0;
         var methodCode = new StringBuilder();
         methodCode.append(getMethodHeader(method));
         methodCode.append(getMethodBody(method));
@@ -504,7 +506,39 @@ public class OllirToJasmin {
     }
 
     private String getBinaryOpInstructionCode(BinaryOpInstruction instruction, HashMap<String, Descriptor> varTable){
-        throw new NotImplementedException("BinaryOpInstruction");
+        StringBuilder instructionCode = new StringBuilder();
+
+        OperationType binopType = instruction.getOperation().getOpType();
+        Element leftOperand = instruction.getLeftOperand();
+        Element rightOperand = instruction.getRightOperand();
+        switch (binopType){
+            case AND:
+                throw new NotImplementedException("Binop not implemented: " + binopType);
+            case LTH:
+                throw new NotImplementedException("Binop not implemented: " + binopType);
+            case ADD:
+                instructionCode.append(loadElement(leftOperand, varTable));
+                instructionCode.append(loadElement(rightOperand, varTable));
+                instructionCode.append("iadd \n");
+                return instructionCode.toString();
+            case SUB:
+                instructionCode.append(loadElement(leftOperand, varTable));
+                instructionCode.append(loadElement(rightOperand, varTable));
+                instructionCode.append("isub \n");
+                return instructionCode.toString();
+            case MUL:
+                instructionCode.append(loadElement(leftOperand, varTable));
+                instructionCode.append(loadElement(rightOperand, varTable));
+                instructionCode.append("imul \n");
+                return instructionCode.toString();
+            case DIV:
+                instructionCode.append(loadElement(leftOperand, varTable));
+                instructionCode.append(loadElement(rightOperand, varTable));
+                instructionCode.append("idiv \n");
+                return instructionCode.toString();
+            default:
+                throw new NotImplementedException("Binop type not implemented: " + binopType);
+        }
     }
 
     private String getPutFieldInstructionCode(PutFieldInstruction instruction, HashMap<String, Descriptor> varTable){
