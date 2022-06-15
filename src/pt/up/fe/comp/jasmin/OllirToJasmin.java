@@ -112,7 +112,7 @@ public class OllirToJasmin {
     private String getSuperClassName(){
         var superClass = classUnit.getSuperClass();
         if(superClass == null){
-            return "/java/lang/object";
+            return "java/lang/Object";
         }
         else{
             return getFullyQualifiedName(superClass);
