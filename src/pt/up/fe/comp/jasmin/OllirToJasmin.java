@@ -17,24 +17,29 @@ import static org.specs.comp.ollir.ElementType.*;
 public class OllirToJasmin {
 
     private final ClassUnit classUnit;
+    ArrayList<String> imports;
 
     public OllirToJasmin(ClassUnit classUnit){
         this.classUnit = classUnit;
+        this.imports = classUnit.getImports();
         //classUnit.show();
     }
 
     // TODO: change access modifiers for this class's functions
     public String getClassCode(){
+
         var classCode = new StringBuilder();
 
         // Class Name
         classCode.append(".class public ").append(classUnit.getClassName()).append("\n\n");
 
+        /*
         for (var import2 : classUnit.getImports()){
             classCode.append(".import ");
             classCode.append(import2.toString()).append("\n");
         }
         classCode.append("\n");
+        */
 
         // Super Class and Constructor
         classCode.append(".super ").append(getSuperClassName()).append("\n\n");
@@ -48,10 +53,6 @@ public class OllirToJasmin {
             classCode.append(getMethodCode(method));
         }
 
-        System.out.println("--------------------------------");
-        System.out.println(classCode.toString());
-        System.out.println("--------------------------------");
-
         return classCode.toString();
     }
 
@@ -63,7 +64,8 @@ public class OllirToJasmin {
 
         AccessModifiers fieldAccessModifier = field.getFieldAccessModifier();
         if(fieldAccessModifier == AccessModifiers.DEFAULT){
-            throw new RuntimeException("Invalid field access modifier found: " + fieldAccessModifier);
+            //throw new RuntimeException("Invalid field access modifier found: " + fieldAccessModifier);
+            fieldCode.append(" DEFAULT");
         }
         else{
             String accessModifierString = fieldAccessModifier.toString();
@@ -96,7 +98,7 @@ public class OllirToJasmin {
         if (className == null){
             throw new RuntimeException("Null class has no super class");
         }
-        for(var importString : classUnit.getImports()){
+        for(var importString : this.imports){
             var splitImports = importString.split("\\.");
 
             String lastName;
@@ -167,7 +169,20 @@ public class OllirToJasmin {
                 typeDescriptor.append("[").append(getJasminElementType(childElemType));
                 return typeDescriptor.toString();
             case OBJECTREF:
-                throw new NotImplementedException("Element type not implemented: " + elementType);
+                String objectClass = ((ClassType) type).getName();
+                System.out.println("\n\n\n-----------------------IMPORTS-------------------------");
+                for (String imported : imports){
+                    System.out.println("IMPORT: imported");
+                }
+                System.out.println("-----------------------IMPORTS-------------------------\n\n");
+                for (String importedClass : imports){
+                    if(importedClass.endsWith("." + objectClass)){
+                        typeDescriptor.append("L");
+                        typeDescriptor.append(importedClass.replace('.', '/')).append(";");
+                        return typeDescriptor.toString();
+                    }
+                }
+                throw new RuntimeException("AAAAAAAAAAAAAAAAAAAAAAAA");
             case CLASS:
                 throw new NotImplementedException("Element type not implemented: " + elementType);
             default:
@@ -325,9 +340,7 @@ public class OllirToJasmin {
         for (Element toLoad : instruction.getListOfOperands())
             instructionCode.append(loadElement(toLoad, varTable));
 
-        instructionCode.append("\t.limit stack 99\n");
-
-        instructionCode.append("invokestatic ");
+        instructionCode.append("\tinvokestatic ");
 
         String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
         String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral().replace("\"", "");
@@ -353,13 +366,11 @@ public class OllirToJasmin {
         for (Element toLoad : instruction.getListOfOperands())
             instructionCode.append(loadElement(toLoad, varTable));
 
-        instructionCode.append("\t.limit stack 99\n");
-
-        instructionCode.append("invokevirtual ");
+        instructionCode.append("\tinvokevirtual ");
 
         String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
         String instructionName = ((LiteralElement) instruction.getSecondArg()).getLiteral().replace("\"", "");
-        instructionCode.append(getFullyQualifiedName(instructionClassName)).append("/").append(instructionName);
+        instructionCode.append(instructionName).append("/").append(instructionName);
 
         instructionCode.append("(");
         for (Element operand : instruction.getListOfOperands()){
@@ -378,9 +389,7 @@ public class OllirToJasmin {
         Element firstSpecialInstruction = instruction.getFirstArg();
         instructionCode.append(loadElement(firstSpecialInstruction, varTable));
 
-        instructionCode.append("\t.limit stack 99\n");
-
-        instructionCode.append("invokespecial ");
+        instructionCode.append("\tinvokespecial ");
 
         String instructionClassName = "";
         if(instruction.getFirstArg().getType().getTypeOfElement() == THIS){
