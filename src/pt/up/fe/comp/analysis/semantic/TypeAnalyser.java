@@ -65,7 +65,7 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
     private String visitMethodCall(JmmNode node, List<Report> reports) {
         // check for each arg if type is the same as the type in the list at that point
         String callerType = visit(node.getJmmParent().getChildren().get(node.getIndexOfSelf() - 1), reports);
-        if (symbolTable.getImports().contains(callerType) || callerType.equals(symbolTable.getSuper())) {
+        if (symbolTable.getImports().contains(callerType) || callerType.equals(symbolTable.getSuper()) || callerType.equals("valid")) {
             return "valid";
         }
 
@@ -137,6 +137,8 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         String methodName = ancestor.get("name");
 
         if (variableExists(name, methodName)) {
+
+            //Check if array access
             Type type = symbolTable.getVariableType(name, methodName);
             if (type.isArray()) {
                 node.put("type", "array");
@@ -152,7 +154,7 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         }
 
 
-        return "";
+        return "valid";
     }
 
     private String visitBooleans(JmmNode node, List<Report> reports) {
@@ -180,9 +182,19 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
         JmmNode leftOperand = node.getChildren().get(0);
         JmmNode rightOperand = node.getChildren().get(1);
 
-        String leftOperandType = visit(leftOperand, reports);
-        String rightOperandType = visit(rightOperand, reports);
+        String leftOperandType;
+        String rightOperandType;
+        if (leftOperand.getKind().equals("ID") && leftOperand.getChildren().size() > 0 && leftOperand.getChildren().get(0).getKind().equals("ArrayAccess")) {
+            leftOperandType = "int";
+        } else {
+            leftOperandType = visit(leftOperand, reports);
+        }
 
+        if (rightOperand.getKind().equals("ID") && rightOperand.getChildren().size() > 0 && rightOperand.getChildren().get(0).getKind().equals("ArrayAccess")) {
+            rightOperandType = "int";
+        } else {
+            rightOperandType = visit(rightOperand, reports);
+        }
         // Check if operations are between objects of the same type
         if (!leftOperandType.equals(rightOperandType)) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
@@ -243,7 +255,7 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
 
     private String visitArrayAccess(JmmNode node, List<Report> reports) {
         JmmNode parentNode = node.getJmmParent();
-        if (!(parentNode.getKind().equals("ID") || parentNode.getKind().equals("ArrayCreation"))) {
+        if (!(parentNode.getKind().equals("ID") || parentNode.getKind().equals("ArrayCreation") || parentNode.getKind().equals("Assign"))) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
                     Integer.parseInt(node.get("col")), "Trying to access object that is not an array"));
         }
@@ -258,7 +270,13 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
             }
         }
 
-        String expressionType = visit(node.getChildren().get(0), reports);
+        String expressionType;
+        if (node.getChildren().get(0).getKind().equals("ID") && node.getChildren().get(0).getChildren().size() > 0 &&
+                node.getChildren().get(0).getChildren().get(0).getKind().equals("ArrayAccess")) {
+            expressionType = "int";
+        } else {
+            expressionType = visit(node.getChildren().get(0), reports);
+        }
 
         if (!expressionType.equals("int")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(node.get("line")),
@@ -301,12 +319,23 @@ public class TypeAnalyser extends PreorderJmmVisitor<List<Report>, String> {
             }
         }
 
+
         Type varType = symbolTable.getVariableType(node.get("name"), ancestor.get(
                 "name"));
         String type = varType.isArray() ? "array" : varType.getName();
         String assigned = visit(node.getChildren().get(0), reports);
 
+
         if (!assigned.equals("valid")) {
+            if (node.getChildren().get(0).getKind().equals("ID") &&
+                    node.getChildren().get(0).getChildren().size() > 0 &&
+                    node.getChildren().get(0).getChildren().get(0).getKind().equals("ArrayAccess")) {
+                return "";
+            }
+            if (node.getChildren().get(0).getKind().equals("ArrayAccess") && visit(node.getChildren().get(1),
+                    reports).equals("int")) {
+                return "";
+            }
             if (!(symbolTable.isImport(type) && symbolTable.isImport(assigned))) {
                 if (!(type.equals(assigned))) {
                     if (!(symbolTable.getClassName().equals(assigned) && type.equals(symbolTable.getSuper()))) {
