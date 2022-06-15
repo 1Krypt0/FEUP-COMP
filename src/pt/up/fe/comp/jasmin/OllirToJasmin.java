@@ -460,9 +460,9 @@ public class OllirToJasmin {
         StringBuilder instructionCode = new StringBuilder();
 
         Operand opDest = (Operand) instruction.getDest();
-        ElementType opType = opDest.getType().getTypeOfElement();
-        int register = varTable.get(opDest.getName()).getVirtualReg();
         Descriptor opDescriptor = varTable.get(opDest.getName());
+        int register = opDescriptor.getVirtualReg();
+        ElementType opType = opDest.getType().getTypeOfElement();
         ElementType descriptorType = opDescriptor.getVarType().getTypeOfElement();
 
 
