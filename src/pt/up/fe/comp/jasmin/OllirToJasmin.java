@@ -300,6 +300,8 @@ public class OllirToJasmin {
                 return getInvokeSpecialCode(instruction, varTable);
             case NEW:
                 return getNewInvocationCode(instruction, varTable);
+            case arraylength:
+                return getArrayLengthInvocationCode(instruction, varTable);
             default:
                 throw new RuntimeException("Unknown method invocation type: " + methodInvocationType);
         }
@@ -416,6 +418,14 @@ public class OllirToJasmin {
             default:
                 throw new RuntimeException("Unknown NEW invocation return type: " + returnType);
         }
+        return instructionCode.toString();
+    }
+
+    private String getArrayLengthInvocationCode(CallInstruction instruction, HashMap<String, Descriptor> varTable){
+        StringBuilder instructionCode = new StringBuilder();
+        Element firstInstruction = instruction.getFirstArg();
+        instructionCode.append(loadElement(firstInstruction, varTable));
+        instructionCode.append("\tarraylength\n");
         return instructionCode.toString();
     }
 
