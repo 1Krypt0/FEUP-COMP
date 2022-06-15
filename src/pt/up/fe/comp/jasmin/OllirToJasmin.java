@@ -24,7 +24,6 @@ public class OllirToJasmin {
         this.classUnit = classUnit;
         this.imports = classUnit.getImports();
         this.classname = "";
-        System.out.println();
         //classUnit.show();
     }
 
@@ -44,6 +43,8 @@ public class OllirToJasmin {
             classCode.append(getFieldCode(field)).append("\n");
         }
 
+        classCode.append("\n");
+
         // Class Methods
         for (var method : classUnit.getMethods()){
             classCode.append(getMethodCode(method));
@@ -56,7 +57,7 @@ public class OllirToJasmin {
     private String getFieldCode(Field field){
         StringBuilder fieldCode = new StringBuilder();
 
-        fieldCode.append("\t.field");
+        fieldCode.append(".field");
 
         AccessModifiers fieldAccessModifier = field.getFieldAccessModifier();
         if(fieldAccessModifier == AccessModifiers.DEFAULT){
@@ -84,8 +85,6 @@ public class OllirToJasmin {
         if(field.isInitialized()){
             fieldCode.append(" = ").append(field.getInitialValue());
         }
-
-        fieldCode.append("\n");
 
         return fieldCode.toString();
     }
@@ -166,11 +165,6 @@ public class OllirToJasmin {
                 return typeDescriptor.toString();
             case OBJECTREF:
                 String objectClass = ((ClassType) type).getName();
-                System.out.println("\n\n\n-----------------------IMPORTS-------------------------");
-                for (String imported : imports){
-                    System.out.println("IMPORT: imported");
-                }
-                System.out.println("-----------------------IMPORTS-------------------------\n\n");
                 for (String importedClass : imports){
                     if(importedClass.endsWith("." + objectClass)){
                         typeDescriptor.append("L");
@@ -601,10 +595,6 @@ public class OllirToJasmin {
         Descriptor toLoadDescriptor = varTable.get(((Operand) toLoad).getName());
 
         ElementType descriptorType = toLoadDescriptor.getVarType().getTypeOfElement();
-        /*
-        System.out.println("element | descriptor");
-        System.out.println(toLoad.toString() + " | " + toLoadDescriptor.toString());
-        */
         //?aload ; <a b ...> -> <b[a] ... >
         //? = i | f | d | l | a | b (= byte or boolean)`
         if(toLoadElementType != ARRAYREF && descriptorType == ARRAYREF){
