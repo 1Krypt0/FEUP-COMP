@@ -48,6 +48,10 @@ public class OllirToJasmin {
             classCode.append(getMethodCode(method));
         }
 
+        System.out.println("--------------------------------");
+        System.out.println(classCode.toString());
+        System.out.println("--------------------------------");
+
         return classCode.toString();
     }
 
@@ -625,12 +629,11 @@ public class OllirToJasmin {
                     descriptorCode.append("\ti");
                     break;
                 case BOOLEAN:
+                    descriptorCode.append("\ti");
+                    break;
+                default:
                     descriptorCode.append("\ta");
                     break;
-                case OBJECTREF:
-                        throw new NotImplementedException("OBJECTREF descriptor loading not implemented");
-                default:
-                    throw new RuntimeException("Unknown descriptor type " + descriptorType);
             }
 
             //a/i + load_1/load_2/load_3/load x
