@@ -8,6 +8,7 @@ import java.util.Map;
 import pt.up.fe.comp.analysis.JmmAnalyser;
 import pt.up.fe.comp.jasmin.JasminEmitter;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
+import pt.up.fe.comp.jmm.jasmin.JasminUtils;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp.ollir.JmmOptimizer;
@@ -42,6 +43,8 @@ public class Launcher {
         // Instantiate JmmParser
         SimpleParser parser = new SimpleParser();
 
+
+        System.out.println("Parsing...");
         // Parse stage
         JmmParserResult parserResult = parser.parse(input, config);
 
@@ -51,17 +54,18 @@ public class Launcher {
         // Instantiate JmmAnalysis
         JmmAnalyser analyser = new JmmAnalyser();
 
+        System.out.println("Analysing semantics...");
         // Analysis stage
         JmmSemanticsResult analysisResult = analyser.semanticAnalysis(parserResult);
 
         // Check if there are parsing errors
         TestUtils.noErrors(analysisResult.getReports());
 
-
         JmmOptimizer optimizer = new JmmOptimizer();
         JmmSemanticsResult optimizedResult = optimizer.optimize(analysisResult);
         TestUtils.noErrors(optimizedResult);
 
+        System.out.println("Generating code...");
         // Convert to Ollir
         var ollirResult = optimizer.toOllir(optimizedResult);
 
@@ -71,8 +75,27 @@ public class Launcher {
         // Convert to jasmin
         var jasminResult = jasminEmitter.toJasmin(ollirResult);
 
+        if (jasminResult.getReports().size() > 0) {
+            System.out.println("Something went wrong!");
+            jasminResult.getReports().forEach(System.out::println);
+        } else {
+            System.out.println("Compilation successful!");
 
-        // ... add remaining stages
+            SpecsIo.write(new File("./" + jasminResult.getClassName() + ".json"),
+                    parserResult.toJson());
+
+            SpecsIo.write(new File("./" + jasminResult.getClassName() + ".symbols.txt"),
+                    analysisResult.getSymbolTable().print());
+
+            SpecsIo.write(new File("./" + jasminResult.getClassName() + ".ollir"),
+                    ollirResult.getOllirCode());
+
+            var jasminFile = new File("./" + jasminResult.getClassName() + ".j");
+            SpecsIo.write(jasminFile,
+                    jasminResult.getJasminCode());
+
+            JasminUtils.assemble(jasminFile, new File("./"));
+        }
     }
 
 }
