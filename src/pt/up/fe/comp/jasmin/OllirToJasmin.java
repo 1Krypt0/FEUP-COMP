@@ -283,8 +283,6 @@ public class OllirToJasmin {
                 return getPutFieldInstructionCode( (PutFieldInstruction) instruction, varTable);
             case GETFIELD:
                 return getGetFieldInstructionCode( (GetFieldInstruction) instruction, varTable);
-            case UNARYOPER:
-                throw new NotImplementedException("UNARYOPER instruction type not implemented");
             default:
                 throw new RuntimeException("Unknown instruction type " + instructionType);
         }
