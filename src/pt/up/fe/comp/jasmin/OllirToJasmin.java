@@ -131,8 +131,7 @@ public class OllirToJasmin {
             case PROTECTED:
                 return "protected";
             case DEFAULT:
-                //throw new RuntimeException("Unknown DEFAULT access modifier");
-                return "public";
+                return "private";
         }
         throw new RuntimeException("Could not get access modifier for method " + method.getMethodName());
     }
