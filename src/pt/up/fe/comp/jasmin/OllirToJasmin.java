@@ -17,11 +17,14 @@ import static org.specs.comp.ollir.ElementType.*;
 public class OllirToJasmin {
 
     private final ClassUnit classUnit;
-    ArrayList<String> imports;
+    private ArrayList<String> imports;
+    private String classname;
 
     public OllirToJasmin(ClassUnit classUnit){
         this.classUnit = classUnit;
         this.imports = classUnit.getImports();
+        this.classname = "";
+        System.out.println();
         //classUnit.show();
     }
 
@@ -31,7 +34,8 @@ public class OllirToJasmin {
         var classCode = new StringBuilder();
 
         // Class Name
-        classCode.append(".class public ").append(classUnit.getClassName()).append("\n\n");
+        this.classname = classUnit.getClassName();
+        classCode.append(".class public ").append(this.classname).append("\n\n");
 
         /*
         for (var import2 : classUnit.getImports()){
@@ -396,7 +400,7 @@ public class OllirToJasmin {
             instructionClassName = getSuperClassName();
         }
         else{
-            instructionClassName = instruction.getClass().getName();
+            instructionClassName = this.classname;
         }
 
         instructionCode.append(instructionClassName).append("/<init>");
@@ -434,11 +438,11 @@ public class OllirToJasmin {
                     default:
                         throw new RuntimeException("Uknown array type for new instruction " + arrayType);
                 }
-                instructionCode.append("\tnewarray ").append(arrayTypeString).append("\n");
+                instructionCode.append("newarray ").append(arrayTypeString).append("\n");
                 break;
             case OBJECTREF:
                 String instructionClassName = ((Operand) instruction.getFirstArg()).getName();
-                instructionCode.append("\tnew ").append(instructionClassName).append("\n");
+                instructionCode.append("new ").append(instructionClassName).append("\n");
                 instructionCode.append("\tdup\n");  //push duplicate
                 break;
             default:
@@ -510,7 +514,7 @@ public class OllirToJasmin {
 
     private String getReturnInstructionCode(ReturnInstruction instruction, HashMap<String, Descriptor> varTable){
         if(!instruction.hasReturnValue()){
-            return "\treturn\n";
+            return "return\n";
         }
 
         StringBuilder instructionCode = new StringBuilder();
@@ -518,10 +522,10 @@ public class OllirToJasmin {
         ElementType returnType = instruction.getReturnType().getTypeOfElement();
         switch (returnType){
             case INT32:
-                instructionCode.append("\ti");
+                instructionCode.append("i");
                 break;
             case BOOLEAN:
-                instructionCode.append("\ta");
+                instructionCode.append("a");
                 break;
             default:
                 throw new NotImplementedException("Unknown NEW invocation return type: " + returnType);
@@ -563,7 +567,7 @@ public class OllirToJasmin {
     private String loadLiteral(Element toLoad){
         // e.g. 1, "abc", etc...
 
-        StringBuilder literalCode = new StringBuilder("\t");
+        StringBuilder literalCode = new StringBuilder();
         String literalString = ((LiteralElement) toLoad).getLiteral();
 
         ElementType literalType = toLoad.getType().getTypeOfElement();
@@ -626,22 +630,21 @@ public class OllirToJasmin {
         ElementType descriptorType = toLoad.getVarType().getTypeOfElement();
         //aload_0
         if (descriptorType == THIS){
-            return "\taload_0\n";
+            return "aload_0\n";
         }
         else{
             StringBuilder descriptorCode = new StringBuilder();
 
-            descriptorCode.append("\t");
             int descriptorRegister = toLoad.getVirtualReg();
             switch (descriptorType){
                 case INT32:
-                    descriptorCode.append("\ti");
+                    descriptorCode.append("i");
                     break;
                 case BOOLEAN:
-                    descriptorCode.append("\ti");
+                    descriptorCode.append("i");
                     break;
                 default:
-                    descriptorCode.append("\ta");
+                    descriptorCode.append("a");
                     break;
             }
 
